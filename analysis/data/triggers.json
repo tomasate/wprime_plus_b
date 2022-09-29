@@ -1,14 +1,14 @@
 {
     "2016": {
-        "ele": "Ele27_WPTight_Gsf", 
-        "mu": "IsoMu24"
+        "ele": ["Ele27_WPTight_Gsf"], 
+        "mu": ["IsoMu24"]
     }, 
     "2017": {
-        "ele": "Ele35_WPTight_Gsf", 
-        "mu": "IsoMu27"
+        "ele": ["Ele35_WPTight_Gsf"], 
+        "mu": ["IsoMu27"]
     }, 
     "2018": {
-        "ele": "Ele32_WPTight_Gsf", 
-        "mu": "IsoMu24"
+        "ele": ["Ele32_WPTight_Gsf"], 
+        "mu": ["IsoMu24"]
     }
 }
