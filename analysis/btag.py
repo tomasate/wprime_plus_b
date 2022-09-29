@@ -163,6 +163,7 @@ class BTagCorrector:
         # btagSFbc_{year}: btagSFbc_up/down
         # btagSFlight_correlated: btagSFlight_up/down_correlated
         # btagSFbc_correlated:  btagSFbc_up/down_correlated
+        """
         weights.add(
             f'btagSFlight_{label}{self._year}',
             np.ones(len(nominal)),
@@ -219,3 +220,4 @@ class BTagCorrector:
                 bcPass
             )
         )
+        """
