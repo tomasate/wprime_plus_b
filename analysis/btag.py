@@ -1,10 +1,9 @@
 import correctionlib
+import importlib.resources
 import awkward as ak
-from coffea import processor, hist, util
 import numpy as np
 import pickle as pkl 
-import importlib.resources
-
+from coffea import processor, hist, util
 from coffea.lookup_tools.correctionlib_wrapper import correctionlib_wrapper
 from coffea.lookup_tools.dense_lookup import dense_lookup
 
@@ -104,8 +103,10 @@ class BTagCorrector:
             self._cset = correctionlib.CorrectionSet.from_file(f"/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/BTV/{year}_UL/btagging.json.gz")
 
         # efficiency lookup
-        with importlib.resources.path("boostedhiggs.data", f"btageff_{tagger}_{wp}_{year}.coffea") as filename:
-            self.efflookup = util.load(str(filename))
+        
+        self.efflookup = util.load(f"data/btageff_{self._tagger}_{self._wp}_{self._year}.coffea")
+        #with importlib.resources.path("data", f"btageff_{tagger}_{wp}_{year}.coffea") as filename:
+        #    self.efflookup = util.load(str(filename))
 
     def lighttagSF(self, j, syst="central"):
         # syst: central, down, down_correlated, down_uncorrelated, up, up_correlated
