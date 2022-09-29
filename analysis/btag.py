@@ -103,10 +103,7 @@ class BTagCorrector:
             self._cset = correctionlib.CorrectionSet.from_file(f"/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/BTV/{year}_UL/btagging.json.gz")
 
         # efficiency lookup
-        
         self.efflookup = util.load(f"data/btageff_{self._tagger}_{self._wp}_{self._year}.coffea")
-        #with importlib.resources.path("data", f"btageff_{tagger}_{wp}_{year}.coffea") as filename:
-        #    self.efflookup = util.load(str(filename))
 
     def lighttagSF(self, j, syst="central"):
         # syst: central, down, down_correlated, down_uncorrelated, up, up_correlated
@@ -137,7 +134,7 @@ class BTagCorrector:
 
         lightPass = lightJets[self._branch] > self._btagwp
         bcPass = bcJets[self._branch] > self._btagwp
-
+        
         def combine(eff, sf, passbtag):
             # tagged SF = SF*eff / eff = SF
             tagged_sf = ak.prod(sf[passbtag], axis=-1)
@@ -159,7 +156,7 @@ class BTagCorrector:
         
         # nominal weight = btagSF (btagSFbc*btagSFlight)
         nominal = lightweight * bcweight
-        weights.add('btagSF'+label, nominal )
+        weights.add('btagSF' + label, nominal)
 
         # systematics:
         # btagSFlight_{year}: btagSFlight_up/down
@@ -167,7 +164,7 @@ class BTagCorrector:
         # btagSFlight_correlated: btagSFlight_up/down_correlated
         # btagSFbc_correlated:  btagSFbc_up/down_correlated
         weights.add(
-            'btagSFlight_%s%s'%(label,self._year),
+            f'btagSFlight_{label}{self._year}',
             np.ones(len(nominal)),
             weightUp=combine(
                 lightEff,
@@ -181,7 +178,7 @@ class BTagCorrector:
             )
         )
         weights.add(
-            'btagSFbc_%s'%(label,self._year), 
+            f'btagSFbc_{label}{self._year}', 
             np.ones(len(nominal)),
             weightUp=combine(
                 bcEff,
@@ -195,7 +192,7 @@ class BTagCorrector:
             )
         )
         weights.add(
-            'btagSFlight_correlated_%s'%label,
+            f'btagSFlight_correlated_{label}',
             np.ones(len(nominal)),
             weightUp=combine(
                 lightEff,
@@ -209,7 +206,7 @@ class BTagCorrector:
             )
         )
         weights.add(
-            'btagSFbc_correlated_%s'%label,
+            f'btagSFbc_correlated_{label}',
             np.ones(len(nominal)),
             weightUp=combine(
                 bcEff,
@@ -222,4 +219,3 @@ class BTagCorrector:
                 bcPass
             )
         )
-        return nominal
