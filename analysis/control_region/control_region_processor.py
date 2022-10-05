@@ -308,7 +308,7 @@ class ControlRegionProcessor(processor.ProcessorABC):
             if not os.path.exists(self._output_location + self._dir_name + date + "/" + ch + "/" + sample):
                 os.makedirs(self._output_location + self._dir_name + date + "/" + ch + "/" + sample)
 
-            fname = self._output_location + self._name + date + "/" + ch + "/" + sample + "/" + partition_key
+            fname = self._output_location + self._dir_name + date + "/" + ch + "/" + sample + "/" + partition_key
             save_dfs_parquet(fname, output[ch])
 
         # return dictionary with cutflows
