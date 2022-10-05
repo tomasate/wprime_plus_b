@@ -191,7 +191,7 @@ class ControlRegionProcessor(processor.ProcessorABC):
             & (events.Jet.btagDeepFlavB > self._btagDeepFlavB)
         )
         n_good_bjets = ak.sum(good_bjets, axis=1)
-        candidatebjet = ak.firsts(events.Jet[n_good_bjets])
+        candidatebjet = ak.firsts(events.Jet[good_bjets])
         
         # MET
         met = events.MET
