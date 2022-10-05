@@ -1,5 +1,6 @@
 import numpy as np
 import awkward as ak
+from coffea.nanoevents.methods import candidate, vector
 
 def normalize(val, cut=None):
     """normalize arrays after a cut or selection"""
