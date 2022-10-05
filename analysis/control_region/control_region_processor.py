@@ -22,7 +22,7 @@ class ControlRegionProcessor(processor.ProcessorABC):
         year: str = "2017", 
         yearmod: str = "",
         channels: List[str] = ["ele", "mu"],
-        output_location="analysis/outfiles/",
+        output_location="./outfiles/",
         dir_name: str = "control_region/"
     ):
         self._year = year
