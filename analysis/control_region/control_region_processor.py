@@ -209,8 +209,8 @@ class ControlRegionProcessor(processor.ProcessorABC):
         variables = {
             "lep": {
                 "lep_pt": candidatelep.pt,
-                "lep_isolation": lep_reliso,
-                "lep_misolation": lep_miso,
+                "lep_reliso": lep_reliso,
+                "lep_miniso": lep_miso,
                 "lep_met_mt": mt_lep_met,
                 "lep_bjet_dr": lep_bjet_dr
             },
