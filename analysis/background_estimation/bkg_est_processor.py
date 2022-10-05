@@ -9,9 +9,9 @@ import pyarrow.parquet as pq
 from coffea import processor
 from coffea.nanoevents import NanoEventsFactory, NanoAODSchema
 from coffea.analysis_tools import Weights, PackedSelection
-from corrections import add_pileup_weight
-from btag import btagWPs, BTagCorrector
-from utils import normalize, pad_val, build_p4, save_dfs_parquet, ak_to_pandas
+from analysis.corrections import add_pileup_weight
+from analysis.btag import btagWPs, BTagCorrector
+from analysis.utils import normalize, pad_val, build_p4, save_dfs_parquet, ak_to_pandas
 from typing import List
 from datetime import datetime
 
@@ -22,7 +22,7 @@ class BackgroundEstimatorProcessor(processor.ProcessorABC):
         year: str = "2017", 
         yearmod: str = "",
         channels: List[str] = ["ele", "mu"],
-        output_location="./outfiles/",
+        output_location="analysis/background_estimation/outfiles/",
     ):
         self._year = year
         self._yearmod = yearmod
@@ -30,20 +30,20 @@ class BackgroundEstimatorProcessor(processor.ProcessorABC):
         self._output_location = output_location
         
         # open triggers
-        with open("data/triggers.json", "r") as f:
+        with open("analysis/data/triggers.json", "r") as f:
             self._triggers = json.load(f)[self._year]
             
         # open btagDeepFlavB
-        with open("data/btagDeepFlavB.json", "r") as f:
+        with open("analysis/data/btagDeepFlavB.json", "r") as f:
             self._btagDeepFlavB = json.load(f)[self._year]
             
         # open lumi masks
-        with open('data/lumi_masks.pkl', 'rb') as handle:
+        with open('analysis/data/lumi_masks.pkl', 'rb') as handle:
             self._lumi_mask = pickle.load(handle)
             
         # open met filters
         # https://twiki.cern.ch/twiki/bin/view/CMS/MissingETOptionalFiltersRun2
-        with open('data/metfilters.json', 'rb') as handle:
+        with open('analysis/data/metfilters.json', 'rb') as handle:
             self._metfilters = json.load(handle)[self._year]
             
         if year == "2018":
@@ -293,7 +293,7 @@ class BackgroundEstimatorProcessor(processor.ProcessorABC):
                 output[ch] = ak_to_pandas(output[ch])
 
         # now save pandas dataframes
-        with open("data/simplified_samples.json", "r") as f:
+        with open("analysis/data/simplified_samples.json", "r") as f:
             simplified_samples = json.load(f)
         sample = simplified_samples[dataset]
         partition_key = events.behavior["__events_factory__"]._partition_key.replace("/", "_")
