@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import awkward as ak
 from coffea.nanoevents.methods import candidate, vector
 
@@ -58,3 +59,20 @@ def build_p4(cand: ak.Array):
         with_name="PtEtaPhiMCandidate",
         behavior=candidate.behavior,
     )
+
+def save_dfs_parquet(output_location: str, fname: str, dfs_dict: dict, ch: str):
+    """
+    save dataframes as parquet files
+    """
+    table = pa.Table.from_pandas(dfs_dict)
+    if len(table) != 0:  # skip dataframes with empty entries
+        pq.write_table(table, output_location + ch + "/parquet/" + fname + ".parquet")
+        
+def ak_to_pandas(output_collection: ak.Array) -> pd.DataFrame:
+    """
+    cast awkward array into a pandas dataframe
+    """
+    output = pd.DataFrame()
+    for field in ak.fields(output_collection):
+        output[field] = ak.to_numpy(output_collection[field])
+    return output
