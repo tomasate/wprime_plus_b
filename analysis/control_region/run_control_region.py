@@ -1,5 +1,3 @@
-import os
-import sys
 import json
 import pickle
 import argparse
@@ -22,12 +20,10 @@ def main(args):
     
     # executor arguments
     if args.executor == "iterative":
-        print("using iterative executor")
         executor_args = {
             "schema": processor.NanoAODSchema,
         }
     elif args.executor == "dask":
-        print("using dask executor")
         client = Client("tls://daniel-2eocampo-2ehenao-40cern-2ech.dask.cmsaf-prod.flatiron.hollandhpc.org:8786")
         executor_args = {
             "schema": processor.NanoAODSchema,
