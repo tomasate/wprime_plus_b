@@ -1,6 +1,8 @@
 import numpy as np
 import pandas as pd
 import awkward as ak
+import pyarrow as pa
+import pyarrow.parquet as pq
 from coffea.nanoevents.methods import candidate, vector
 
 def normalize(var: ak.Array, cut: ak.Array = None):
