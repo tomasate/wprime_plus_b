@@ -2,10 +2,19 @@ import numpy as np
 import awkward as ak
 from coffea.nanoevents.methods import candidate, vector
 
-def normalize(val: ak.Array, cut: ak.Array = None):
-    """normalize arrays after a cut or selection"""
+def normalize(var: ak.Array, cut: ak.Array = None):
+    """
+    normalize arrays after a cut or selection
+    
+    params:
+    -------
+    var:
+        variable array
+    cut:
+        mask array to filter variable array
+    """
     if cut is None:
-        ar = ak.to_numpy(ak.fill_none(val, np.nan))
+        ar = ak.to_numpy(ak.fill_none(var, np.nan))
         return ar
     else:
         ar = ak.to_numpy(ak.fill_none(val[cut], np.nan))
@@ -32,6 +41,11 @@ def pad_val(
 def build_p4(cand: ak.Array):
     """
     builds a 4-vector
+    
+    params:
+    -------
+    cand:
+        candidate array
     """
     return ak.zip(
         {
