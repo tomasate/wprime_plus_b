@@ -16,7 +16,7 @@ from typing import List
 from datetime import datetime
 
 
-class BackgroundEstimatorProcessor(processor.ProcessorABC):
+class ControlRegionProcessor(processor.ProcessorABC):
     def __init__(
         self, 
         year: str = "2017", 
