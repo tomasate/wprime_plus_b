@@ -2,7 +2,7 @@ import numpy as np
 import awkward as ak
 from coffea.nanoevents.methods import candidate, vector
 
-def normalize(val, cut=None):
+def normalize(val: ak.Array, cut: ak.Array = None):
     """normalize arrays after a cut or selection"""
     if cut is None:
         ar = ak.to_numpy(ak.fill_none(val, np.nan))
