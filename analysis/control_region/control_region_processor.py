@@ -32,20 +32,20 @@ class ControlRegionProcessor(processor.ProcessorABC):
         self._dir_name = dir_name
         
         # open triggers
-        with open("analysis/data/triggers.json", "r") as f:
+        with open("/home/cms-jovyan/b_lepton_met/analysis/data/triggers.json", "r") as f:
             self._triggers = json.load(f)[self._year]
             
         # open btagDeepFlavB
-        with open("analysis/data/btagDeepFlavB.json", "r") as f:
+        with open("/home/cms-jovyan/b_lepton_met/analysis/data/btagDeepFlavB.json", "r") as f:
             self._btagDeepFlavB = json.load(f)[self._year]
             
         # open lumi masks
-        with open('analysis/data/lumi_masks.pkl', 'rb') as handle:
+        with open('/home/cms-jovyan/b_lepton_met/analysis/data/lumi_masks.pkl', 'rb') as handle:
             self._lumi_mask = pickle.load(handle)
             
         # open met filters
         # https://twiki.cern.ch/twiki/bin/view/CMS/MissingETOptionalFiltersRun2
-        with open('analysis/data/metfilters.json', 'rb') as handle:
+        with open('/home/cms-jovyan/b_lepton_met/analysis/data/metfilters.json', 'rb') as handle:
             self._metfilters = json.load(handle)[self._year]
             
         if year == "2018":
@@ -295,7 +295,7 @@ class ControlRegionProcessor(processor.ProcessorABC):
                 output[ch] = ak_to_pandas(output[ch])
 
         # now save pandas dataframes
-        with open("analysis/data/simplified_samples.json", "r") as f:
+        with open("/home/cms-jovyan/b_lepton_met/analysis/data/simplified_samples.json", "r") as f:
             simplified_samples = json.load(f)
         sample = simplified_samples[dataset]
         partition_key = events.behavior["__events_factory__"]._partition_key.replace("/", "_")

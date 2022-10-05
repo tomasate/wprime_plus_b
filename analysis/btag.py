@@ -103,7 +103,7 @@ class BTagCorrector:
             self._cset = correctionlib.CorrectionSet.from_file(f"/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/BTV/{year}_UL/btagging.json.gz")
 
         # efficiency lookup
-        self.efflookup = util.load(f"analysis/data/btageff_{self._tagger}_{self._wp}_{self._year}.coffea")
+        self.efflookup = util.load(f"/home/cms-jovyan/b_lepton_met/analysis/data/btageff_{self._tagger}_{self._wp}_{self._year}.coffea")
 
     def lighttagSF(self, j, syst="central"):
         # syst: central, down, down_correlated, down_uncorrelated, up, up_correlated
