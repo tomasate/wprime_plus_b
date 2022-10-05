@@ -62,13 +62,13 @@ def build_p4(cand: ak.Array):
         behavior=candidate.behavior,
     )
 
-def save_dfs_parquet(output_location: str, fname: str, dfs_dict: dict, ch: str):
+def save_dfs_parquet(fname: str, dfs_dict: dict):
     """
     save dataframes as parquet files
     """
     table = pa.Table.from_pandas(dfs_dict)
     if len(table) != 0:  # skip dataframes with empty entries
-        pq.write_table(table, output_location + ch + "/parquet/" + fname + ".parquet")
+        pq.write_table(table, fname + ".parquet")
         
 def ak_to_pandas(output_collection: ak.Array) -> pd.DataFrame:
     """
