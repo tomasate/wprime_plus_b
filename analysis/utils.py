@@ -5,10 +5,11 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 from coffea.nanoevents.methods import candidate, vector
 
+
 def normalize(var: ak.Array, cut: ak.Array = None):
     """
     normalize arrays after a cut or selection
-    
+
     params:
     -------
     var:
@@ -22,7 +23,8 @@ def normalize(var: ak.Array, cut: ak.Array = None):
     else:
         ar = ak.to_numpy(ak.fill_none(val[cut], np.nan))
         return ar
-    
+
+
 def pad_val(
     arr: ak.Array,
     value: float,
@@ -36,15 +38,18 @@ def pad_val(
     optionally converts to numpy array
     """
     if target:
-        ret = ak.fill_none(ak.pad_none(arr, target, axis=axis, clip=clip), value, axis=None)
+        ret = ak.fill_none(
+            ak.pad_none(arr, target, axis=axis, clip=clip), value, axis=None
+        )
     else:
         ret = ak.fill_none(arr, value, axis=None)
     return ret.to_numpy() if to_numpy else ret
 
+
 def build_p4(cand: ak.Array):
     """
     builds a 4-vector
-    
+
     params:
     -------
     cand:
@@ -62,6 +67,7 @@ def build_p4(cand: ak.Array):
         behavior=candidate.behavior,
     )
 
+
 def save_dfs_parquet(fname: str, dfs_dict: dict):
     """
     save dataframes as parquet files
@@ -69,7 +75,8 @@ def save_dfs_parquet(fname: str, dfs_dict: dict):
     table = pa.Table.from_pandas(dfs_dict)
     if len(table) != 0:  # skip dataframes with empty entries
         pq.write_table(table, fname + ".parquet")
-        
+
+
 def ak_to_pandas(output_collection: ak.Array) -> pd.DataFrame:
     """
     cast awkward array into a pandas dataframe

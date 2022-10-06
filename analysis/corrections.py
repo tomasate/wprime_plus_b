@@ -6,10 +6,11 @@ CorrectionLib files are available from: /cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jso
 """
 pog_correction_path = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/"
 pog_jsons = {
-    #"muon": ["MUO", "muon_Z.json.gz"],
-    #"electron": ["EGM", "electron.json.gz"],
+    # "muon": ["MUO", "muon_Z.json.gz"],
+    # "electron": ["EGM", "electron.json.gz"],
     "pileup": ["LUM", "puWeights.json.gz"],
 }
+
 
 def get_UL_year(year):
     if year == "2016":
@@ -18,13 +19,15 @@ def get_UL_year(year):
         year = "2016preVFP"
     return f"{year}_UL"
 
+
 def get_pog_json(obj, year):
     try:
         pog_json = pog_jsons[obj]
     except:
-        print(f'No json for {obj}')
+        print(f"No json for {obj}")
     year = get_UL_year(year)
     return f"{pog_correction_path}POG/{pog_json[0]}/{year}/{pog_json[1]}"
+
 
 def add_pileup_weight(weights, year, mod, nPU):
     """
@@ -34,9 +37,9 @@ def add_pileup_weight(weights, year, mod, nPU):
     cset = correctionlib.CorrectionSet.from_file(get_pog_json("pileup", year + mod))
 
     year_to_corr = {
-        '2016': 'Collisions16_UltraLegacy_goldenJSON',
-        '2017': 'Collisions17_UltraLegacy_goldenJSON',
-        '2018': 'Collisions18_UltraLegacy_goldenJSON',
+        "2016": "Collisions16_UltraLegacy_goldenJSON",
+        "2017": "Collisions17_UltraLegacy_goldenJSON",
+        "2018": "Collisions18_UltraLegacy_goldenJSON",
     }
 
     values = {}
@@ -46,8 +49,3 @@ def add_pileup_weight(weights, year, mod, nPU):
 
     # add weights (for now only the nominal weight)
     weights.add("pileup", values["nominal"], values["up"], values["down"])
-    
-    
-    
-
-    
