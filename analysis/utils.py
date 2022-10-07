@@ -91,7 +91,15 @@ def ak_to_pandas(output_collection: ak.Array) -> pd.DataFrame:
     return output
 
 
-def save_output(events: ak.Array, dataset: str, output: dict, year: str, channels: List[str], output_location: str, dir_name: str) -> None:
+def save_output(
+    events: ak.Array,
+    dataset: str,
+    output: dict,
+    year: str,
+    channels: List[str],
+    output_location: str,
+    dir_name: str,
+) -> None:
     """
     save dfs to parquet files
     """
@@ -99,7 +107,7 @@ def save_output(events: ak.Array, dataset: str, output: dict, year: str, channel
         "/home/cms-jovyan/b_lepton_met/analysis/data/simplified_samples.json", "r"
     ) as f:
         simplified_samples = json.load(f)
-        
+
     sample = simplified_samples[year][dataset]
     partition_key = events.behavior["__events_factory__"]._partition_key.replace(
         "/", "_"
@@ -108,22 +116,12 @@ def save_output(events: ak.Array, dataset: str, output: dict, year: str, channel
 
     # creating directories for each channel and sample
     for ch in channels:
-        if not os.path.exists(
-            output_location + dir_name + date + "/" + ch
-        ):
+        if not os.path.exists(output_location + dir_name + date + "/" + ch):
             os.makedirs(output_location + dir_name + date + "/" + ch)
         if not os.path.exists(
             output_location + dir_name + date + "/" + ch + "/" + sample
         ):
-            os.makedirs(
-                output_location
-                + dir_name
-                + date
-                + "/"
-                + ch
-                + "/"
-                + sample
-            )
+            os.makedirs(output_location + dir_name + date + "/" + ch + "/" + sample)
 
         fname = (
             output_location
