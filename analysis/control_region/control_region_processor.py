@@ -11,9 +11,8 @@ from coffea.nanoevents import NanoEventsFactory, NanoAODSchema
 from coffea.analysis_tools import Weights, PackedSelection
 from analysis.corrections import add_pileup_weight
 from analysis.btag import btagWPs, BTagCorrector
-from analysis.utils import normalize, pad_val, build_p4, save_dfs_parquet, ak_to_pandas
+from analysis.utils import normalize, pad_val, build_p4, ak_to_pandas, save_output 
 from typing import List
-from datetime import datetime
 
 
 class ControlRegionProcessor(processor.ProcessorABC):
@@ -72,7 +71,8 @@ class ControlRegionProcessor(processor.ProcessorABC):
     def add_selection(self, name: str, sel: np.ndarray, channel: List[str] = None):
         """
         Adds selection to PackedSelection object and the cutflow dictionary
-        https://github.com/cmantill/boostedhiggs/blob/main/boostedhiggs/hwwprocessor.py
+        
+        github.com/cmantill/boostedhiggs/blob/main/boostedhiggs/hwwprocessor.py
         """
         channels = channel if channel else self._channels
         for ch in channels:
@@ -177,6 +177,7 @@ class ControlRegionProcessor(processor.ProcessorABC):
         )
         goodleptons = goodleptons[ak.argsort(goodleptons.pt, ascending=False)]
         candidatelep = ak.firsts(goodleptons)
+        candidatelep_p4 = build_p4(candidatelep)
 
         # reliso for candidate lepton
         lep_reliso = (
@@ -186,9 +187,6 @@ class ControlRegionProcessor(processor.ProcessorABC):
         )
         # miniso for candidate lepton
         lep_miso = candidatelep.miniPFRelIso_all
-
-        # build p4 for candidate lepton
-        candidatelep_p4 = build_p4(candidatelep)
 
         # b-jets
         # IS btagDeepFlavB YEAR AND CHANNEL DEPENDENT?
@@ -235,10 +233,9 @@ class ControlRegionProcessor(processor.ProcessorABC):
         # weights
         weigths = {}
         if self.isMC:
-            # gen weigth
             self.weights.add("genweight", events.genWeight)
 
-            # L1prefiring weigth
+            # L1prefiring 
             if self._year in ("2016", "2017"):
                 self.weights.add(
                     "L1Prefiring",
@@ -247,7 +244,7 @@ class ControlRegionProcessor(processor.ProcessorABC):
                     events.L1PreFiringWeight.Dn,
                 )
 
-            # pileup weigth
+            # pileup 
             add_pileup_weight(
                 self.weights,
                 self._year,
@@ -255,10 +252,10 @@ class ControlRegionProcessor(processor.ProcessorABC):
                 nPU=ak.to_numpy(events.Pileup.nPU),
             )
 
-            # b-tagging weigths
+            # b-tagging 
             self._btagSF.addBtagWeight(events.Jet[good_bjets], self.weights)
 
-            # store the final common weight
+            # store the final common weights
             variables["common"]["weight"] = self.weights.weight()
 
         # selections
@@ -318,48 +315,16 @@ class ControlRegionProcessor(processor.ProcessorABC):
             if not isinstance(output[ch], pd.DataFrame):
                 output[ch] = ak_to_pandas(output[ch])
 
-        # now save pandas dataframes
-        with open(
-            "/home/cms-jovyan/b_lepton_met/analysis/data/simplified_samples.json", "r"
-        ) as f:
-            simplified_samples = json.load(f)
-        sample = simplified_samples[dataset]
-        partition_key = events.behavior["__events_factory__"]._partition_key.replace(
-            "/", "_"
+        # now save pandas dataframe
+        save_output(
+            events,
+            dataset, 
+            output, 
+            self._year,
+            self._channels,
+            self._output_location, 
+            self._dir_name
         )
-        date = datetime.today().strftime("%Y-%m-%d")
-
-        # creating directories for each channel and sample
-        for ch in self._channels:
-            if not os.path.exists(
-                self._output_location + self._dir_name + date + "/" + ch
-            ):
-                os.makedirs(self._output_location + self._dir_name + date + "/" + ch)
-            if not os.path.exists(
-                self._output_location + self._dir_name + date + "/" + ch + "/" + sample
-            ):
-                os.makedirs(
-                    self._output_location
-                    + self._dir_name
-                    + date
-                    + "/"
-                    + ch
-                    + "/"
-                    + sample
-                )
-
-            fname = (
-                self._output_location
-                + self._dir_name
-                + date
-                + "/"
-                + ch
-                + "/"
-                + sample
-                + "/"
-                + partition_key
-            )
-            save_dfs_parquet(fname, output[ch])
 
         # return dictionary with cutflows
         return {
