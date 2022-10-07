@@ -1,8 +1,12 @@
+import os
+import json
 import numpy as np
 import pandas as pd
 import awkward as ak
 import pyarrow as pa
 import pyarrow.parquet as pq
+from datetime import datetime
+from typing import List
 from coffea.nanoevents.methods import candidate, vector
 
 
@@ -85,3 +89,51 @@ def ak_to_pandas(output_collection: ak.Array) -> pd.DataFrame:
     for field in ak.fields(output_collection):
         output[field] = ak.to_numpy(output_collection[field])
     return output
+
+
+def save_output(events: ak.Array, dataset: str, output: dict, year: str, channels: List[str], output_location: str, dir_name: str) -> None:
+    """
+    save dfs to parquet files
+    """
+    with open(
+        "/home/cms-jovyan/b_lepton_met/analysis/data/simplified_samples.json", "r"
+    ) as f:
+        simplified_samples = json.load(f)
+        
+    sample = simplified_samples[year][dataset]
+    partition_key = events.behavior["__events_factory__"]._partition_key.replace(
+        "/", "_"
+    )
+    date = datetime.today().strftime("%Y-%m-%d")
+
+    # creating directories for each channel and sample
+    for ch in channels:
+        if not os.path.exists(
+            output_location + dir_name + date + "/" + ch
+        ):
+            os.makedirs(output_location + dir_name + date + "/" + ch)
+        if not os.path.exists(
+            output_location + dir_name + date + "/" + ch + "/" + sample
+        ):
+            os.makedirs(
+                output_location
+                + dir_name
+                + date
+                + "/"
+                + ch
+                + "/"
+                + sample
+            )
+
+        fname = (
+            output_location
+            + dir_name
+            + date
+            + "/"
+            + ch
+            + "/"
+            + sample
+            + "/"
+            + partition_key
+        )
+        save_dfs_parquet(fname, output[ch])
