@@ -101,7 +101,7 @@ def save_output(
     dir_name: str,
 ) -> None:
     """
-    save dfs to parquet files
+    creates output folders and save dfs to parquet files
     """
     with open(
         "/home/cms-jovyan/b_lepton_met/analysis/data/simplified_samples.json", "r"
