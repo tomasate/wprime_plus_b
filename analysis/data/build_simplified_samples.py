@@ -8,7 +8,8 @@ def main():
     """
     simplified_samples = {}
     for year in ["2016", "2017", "2018"]:
-        fileset_path = f"/home/daniel/Desktop/udea/b_lepton_met/fileset/fileset_{year}_UL_NANO.json"
+        /home/cms-jovyan/b_lepton_met/fileset/fileset_2016_UL_NANO.json
+        fileset_path = f"/home/cms-jovyan/b_lepton_met/fileset/fileset_{year}_UL_NANO.json"
         with open(fileset_path, "r") as f:
             fileset = json.load(f)
         simplified_samples[year] = {sample: "" for sample in fileset}
@@ -27,7 +28,7 @@ def main():
             simplified_samples[year][sample] = sample_match
 
     output_path = (
-        "/home/daniel/Desktop/udea/b_lepton_met/analysis/data/simplified_samples.json"
+        "/home/cms-jovyan/b_lepton_met/analysis/data/simplified_samples.json"
     )
     with open(output_path, "w") as f:
         json.dump(simplified_samples, f)
