@@ -8,7 +8,6 @@ def main():
     """
     simplified_samples = {}
     for year in ["2016", "2017", "2018"]:
-        /home/cms-jovyan/b_lepton_met/fileset/fileset_2016_UL_NANO.json
         fileset_path = f"/home/cms-jovyan/b_lepton_met/fileset/fileset_{year}_UL_NANO.json"
         with open(fileset_path, "r") as f:
             fileset = json.load(f)
