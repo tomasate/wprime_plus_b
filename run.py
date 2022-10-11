@@ -4,6 +4,7 @@ import json
 import pickle
 import argparse
 import dask
+import importlib.resources 
 from datetime import datetime
 from coffea import processor
 from dask.distributed import Client, PipInstall
@@ -11,11 +12,6 @@ from dask.distributed import Client, PipInstall
 
 def main(args):
     loc_base = os.environ['PWD']
-
-    # define processor
-    if args.processor == "ttbar":
-        from analysis.ttbar_processor import TTBarControlRegionProcessor
-        proc = TTBarControlRegionProcessor
                 
     # executor arguments
     executor_args = {
@@ -26,15 +22,12 @@ def main(args):
         client = Client(
             "tls://daniel-2eocampo-2ehenao-40cern-2ech.dask.cmsaf-prod.flatiron.hollandhpc.org:8786"
         )
-        # https://github.com/dask/distributed/issues/6202
-        #plugin = PipInstall(packages=["git+https://github.com/deoache/b_lepton_met.git"])
-        #client.register_worker_plugin(plugin)
-        client.upload_file("analysis/ttbar_processor.py")
-        client.upload_file("analysis/corrections.py")
-        client.upload_file("analysis/utils.py")
-        
         executor_args.update({"client": client})
-
+        
+    # define processor
+    if args.processor == "ttbar":
+        from analysis.ttbar_processor import TTBarControlRegionProcessor
+        proc = TTBarControlRegionProcessor
         
     # load fileset
     with open(
