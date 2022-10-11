@@ -6,8 +6,6 @@ Python package for analyzing W' + b events in the electron and muon channels. Th
 
 ## Processors
 
-All processors can be found in the `analysis` directory. 
-
 General note: [coffea-casa](https://coffea-casa.readthedocs.io/en/latest/cc_user.html) is faster and more convenient, however still somewhat experimental so for large of inputs and/or processors which may require heavier cpu/memory usage condor is recommended (To do)
 
 - [ttbar_processor](analysis/ttbar_processor.py): TTbar Control Region processor that applies pre-selection and selection cuts (two bjets + one lepton + MET), and saves unbinned branches as parquet files.
