@@ -3,7 +3,7 @@ import pickle
 import argparse
 from datetime import datetime
 from coffea import processor
-from analysis.ttbar_cr_processor import TTBarControlRegionProcessor
+
 from dask.distributed import Client
 
 
@@ -21,6 +21,12 @@ def main(args):
             else:
                 fileset[key] = ["root://xcache/" + file for file in val[: args.nfiles]]
 
+    # define processor
+    if args.processor == "ttbar":
+        print(f"using TTBarControlRegionProcessor")
+        from analysis.ttbar_cr_processor import TTBarControlRegionProcessor
+        p = TTBarControlRegionProcessor
+                
     # executor arguments
     if args.executor == "iterative":
         executor_args = {
@@ -36,7 +42,7 @@ def main(args):
     out = processor.run_uproot_job(
         fileset,
         treename="Events",
-        processor_instance=TTBarControlRegionProcessor(
+        processor_instance=p(
             year=args.year,
             yearmod=args.yearmod,
             output_location=args.output_location,
@@ -60,6 +66,13 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--processor",
+        dest="processor",
+        type=str,
+        default="ttbar",
+        help="processor to run",
+    )
     parser.add_argument(
         "--executor",
         dest="executor",
