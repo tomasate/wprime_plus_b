@@ -6,9 +6,6 @@ setup(
     author_email='daniel.ocampoh@udea.edu.co',
     description='W prime analysis',
     url='https://github.com/deoache/b_lepton_met',
-    project_urls = {
-        "Bug Tracker": "https://github.com/mike-huls/toolbox/issues"
-    },
     license='MIT',
     packages=find_packages(),
     install_requires=[
