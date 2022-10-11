@@ -28,17 +28,21 @@ def main(args):
             else:
                 fileset[key] = ["root://xcache/" + file for file in val[: args.nfiles]]
 
+                
     # define processor
     if args.processor == "ttbar":
         from b_lepton_met.ttbar_cr_processor import TTBarControlRegionProcessor
         p = TTBarControlRegionProcessor
                 
+            
     # executor arguments
     if args.executor == "iterative":
+        
         executor_args = {
             "schema": processor.NanoAODSchema,
         }
-    elif args.executor == "dask":
+        
+    if args.executor == "dask":
         class DependencyInstaller(WorkerPlugin):
             def __init__(self, dependencies: List[str]):
                 self._dependencies = " ".join(f"'{dep}'" for dep in dependencies)
@@ -57,6 +61,7 @@ def main(args):
         
         executor_args = {"schema": processor.NanoAODSchema, "client": client}
 
+        
     # run processor
     out = processor.run_uproot_job(
         fileset,
