@@ -27,7 +27,7 @@ def main():
             simplified_samples[year][sample] = sample_match
 
     output_path = (
-        "/home/cms-jovyan/b_lepton_met/analysis/data/simplified_samples.json"
+        "/home/cms-jovyan/b_lepton_met/b_lepton_met/data/simplified_samples.json"
     )
     with open(output_path, "w") as f:
         json.dump(simplified_samples, f)

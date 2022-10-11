@@ -32,26 +32,26 @@ class TTBarControlRegionProcessor(processor.ProcessorABC):
 
         # open triggers
         with open(
-            "/home/cms-jovyan/b_lepton_met/analysis/data/triggers.json", "r"
+            "/home/cms-jovyan/b_lepton_met/b_lepton_met/data/triggers.json", "r"
         ) as f:
             self._triggers = json.load(f)[self._year]
 
         # open btagDeepFlavB
         with open(
-            "/home/cms-jovyan/b_lepton_met/analysis/data/btagDeepFlavB.json", "r"
+            "/home/cms-jovyan/b_lepton_met/b_lepton_met/data/btagDeepFlavB.json", "r"
         ) as f:
             self._btagDeepFlavB = json.load(f)[self._year]
 
         # open lumi masks
         with open(
-            "/home/cms-jovyan/b_lepton_met/analysis/data/lumi_masks.pkl", "rb"
+            "/home/cms-jovyan/b_lepton_met/b_lepton_met/data/lumi_masks.pkl", "rb"
         ) as handle:
             self._lumi_mask = pickle.load(handle)
 
         # open met filters
         # https://twiki.cern.ch/twiki/bin/view/CMS/MissingETOptionalFiltersRun2
         with open(
-            "/home/cms-jovyan/b_lepton_met/analysis/data/metfilters.json", "rb"
+            "/home/cms-jovyan/b_lepton_met/b_lepton_met/data/metfilters.json", "rb"
         ) as handle:
             self._metfilters = json.load(handle)[self._year]
 
