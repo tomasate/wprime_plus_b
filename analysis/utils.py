@@ -6,11 +6,11 @@ import awkward as ak
 import pyarrow as pa
 import pyarrow.parquet as pq
 from datetime import datetime
-from typing import List
+from typing import List, Union
 from coffea.nanoevents.methods import candidate, vector
 
 
-def normalize(var: ak.Array, cut: ak.Array = None):
+def normalize(var: ak.Array, cut: ak.Array = None) -> ak.Array:
     """
     normalize arrays after a cut or selection
 
@@ -36,7 +36,7 @@ def pad_val(
     axis: int = 0,
     to_numpy: bool = False,
     clip: bool = True,
-):
+) -> Union[ak.Array, np.ndarray]:
     """
     pads awkward array up to ``target`` index along axis ``axis`` with value ``value``,
     optionally converts to numpy array
@@ -50,7 +50,7 @@ def pad_val(
     return ret.to_numpy() if to_numpy else ret
 
 
-def build_p4(cand: ak.Array):
+def build_p4(cand: ak.Array) -> ak.Array:
     """
     builds a 4-vector
 
@@ -72,7 +72,7 @@ def build_p4(cand: ak.Array):
     )
 
 
-def save_dfs_parquet(fname: str, dfs_dict: dict):
+def save_dfs_parquet(fname: str, dfs_dict: dict) -> None:
     """
     save dataframes as parquet files
     """
@@ -103,11 +103,8 @@ def save_output(
     """
     creates output folders and save dfs to parquet files
     """
-    with open(
-        "/home/cms-jovyan/wprime_plus_b/data/simplified_samples.json", "r"
-    ) as f:
+    with open("/home/cms-jovyan/wprime_plus_b/data/simplified_samples.json", "r") as f:
         simplified_samples = json.load(f)
-
     sample = simplified_samples[year][dataset]
     partition_key = events.behavior["__events_factory__"]._partition_key.replace(
         "/", "_"
@@ -122,7 +119,6 @@ def save_output(
             output_location + dir_name + date + "/" + ch + "/" + sample
         ):
             os.makedirs(output_location + dir_name + date + "/" + ch + "/" + sample)
-
         fname = (
             output_location
             + dir_name
@@ -135,7 +131,3 @@ def save_output(
             + partition_key
         )
         save_dfs_parquet(fname, output[ch])
-        
-        
-
-    

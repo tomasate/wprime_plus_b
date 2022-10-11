@@ -1,12 +1,13 @@
 import json
 import correctionlib
-import importlib.resources
 import awkward as ak
 import numpy as np
 import pickle as pkl
+from typing import Type
 from coffea import processor, hist, util
 from coffea.lookup_tools.correctionlib_wrapper import correctionlib_wrapper
 from coffea.lookup_tools.dense_lookup import dense_lookup
+from coffea.analysis_tools import Weights
 
 
 # CorrectionLib files are available from
@@ -40,7 +41,7 @@ def get_pog_json(json_name: str, year: str) -> str:
     Parameters:
     -----------
         json_name:
-            json name (muon, electron, pileup or btag)
+            json key name (muon, electron, pileup or btag)
         year:
             dataset year
     """
@@ -51,7 +52,9 @@ def get_pog_json(json_name: str, year: str) -> str:
     return f"{POG_CORRECTION_PATH}/POG/{pog_json[0]}/{POG_YEARS[year]}/{pog_json[1]}"
 
 
-def add_pileup_weight(weights, year, mod, nPU):
+def add_pileup_weight(
+    weights: Type[Weights], year: str, mod: str, nPU: ak.Array
+) -> None:
     """
     add pileup weight
 
@@ -83,7 +86,12 @@ def add_pileup_weight(weights, year, mod, nPU):
     values["down"] = cset[year_to_corr[year]].evaluate(nPU, "down")
 
     # add weights (for now only the nominal weight)
-    weights.add("pileup", values["nominal"], values["up"], values["down"])
+    weights.add(
+        name="pileup",
+        weight=values["nominal"],
+        weightUp=values["up"],
+        weightDown=values["down"],
+    )
 
 
 class BTagCorrector:
@@ -125,7 +133,7 @@ class BTagCorrector:
             f"/home/cms-jovyan/wprime_plus_b/data/btageff_{self._tagger}_{self._wp}_{self._year}.coffea"
         )
 
-    def lighttagSF(self, j, syst="central"):
+    def lighttagSF(self, j, syst="central") -> ak.Array:
         # syst: central, down, down_correlated, down_uncorrelated, up, up_correlated
         # until correctionlib handles jagged data natively we have to flatten and unflatten
         j, nj = ak.flatten(j), ak.num(j)
@@ -138,7 +146,7 @@ class BTagCorrector:
         )
         return ak.unflatten(sf, nj)
 
-    def btagSF(self, j, syst="central"):
+    def btagSF(self, j, syst="central") -> ak.Array:
         # syst: central, down, down_correlated, down_uncorrelated, up, up_correlated
         # until correctionlib handles jagged data natively we have to flatten and unflatten
         j, nj = ak.flatten(j), ak.num(j)
@@ -151,7 +159,12 @@ class BTagCorrector:
         )
         return ak.unflatten(sf, nj)
 
-    def addBtagWeight(self, jets, weights, label=""):
+    def addBtagWeight(
+        self,
+        jets: ak.Array,
+        weights: Type[Weights],
+        label: str = "",
+    ) -> None:
         """
         Adding one common multiplicative SF (including bcjets + lightjets)
 
@@ -191,4 +204,4 @@ class BTagCorrector:
 
         # nominal weight = btagSF (btagSFbc*btagSFlight)
         nominal = lightweight * bcweight
-        weights.add("btagSF" + label, nominal)
+        weights.add(name="btagSF" + label, weight=nominal)

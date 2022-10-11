@@ -1,17 +1,13 @@
-import os
 import json
 import pickle
 import numpy as np
 import pandas as pd
 import awkward as ak
-import pyarrow as pa
-import pyarrow.parquet as pq
 from typing import List
 from coffea import processor
-from coffea.nanoevents import NanoEventsFactory, NanoAODSchema
 from coffea.analysis_tools import Weights, PackedSelection
 from .corrections import add_pileup_weight, BTagCorrector
-from .utils import normalize, pad_val, build_p4, ak_to_pandas, save_output 
+from .utils import normalize, pad_val, build_p4, ak_to_pandas, save_output
 
 
 class TTBarControlRegionProcessor(processor.ProcessorABC):
@@ -30,17 +26,13 @@ class TTBarControlRegionProcessor(processor.ProcessorABC):
         self._dir_name = dir_name
 
         # open triggers
-        with open(
-            "/home/cms-jovyan/wprime_plus_b/data/triggers.json", "r"
-        ) as f:
+        with open("/home/cms-jovyan/wprime_plus_b/data/triggers.json", "r") as f:
             self._triggers = json.load(f)[self._year]
-
+            
         # open btagDeepFlavB
-        with open(
-            "/home/cms-jovyan/wprime_plus_b/data/btagDeepFlavB.json", "r"
-        ) as f:
+        with open("/home/cms-jovyan/wprime_plus_b/data/btagDeepFlavB.json", "r") as f:
             self._btagDeepFlavB = json.load(f)[self._year]
-
+            
         # open met filters
         # https://twiki.cern.ch/twiki/bin/view/CMS/MissingETOptionalFiltersRun2
         with open(
@@ -49,11 +41,9 @@ class TTBarControlRegionProcessor(processor.ProcessorABC):
             self._metfilters = json.load(handle)[self._year]
             
         # open lumi masks
-        with open(
-            "/home/cms-jovyan/wprime_plus_b/data/lumi_masks.pkl", "rb"
-        ) as handle:
+        with open("/home/cms-jovyan/wprime_plus_b/data/lumi_masks.pkl", "rb") as handle:
             self._lumi_mask = pickle.load(handle)
-
+            
         if year == "2018":
             self.dataset_per_ch = {
                 "ele": "EGamma",
@@ -64,14 +54,16 @@ class TTBarControlRegionProcessor(processor.ProcessorABC):
                 "ele": "SingleElectron",
                 "mu": "SingleMuon",
             }
-
+            
         self.common_weights = ["genweight", "L1Prefiring", "pileup", "btagSF"]
 
-    def add_selection(self, name: str, sel: np.ndarray, channel: List[str] = None):
+    def add_selection(
+        self, name: str, sel: ak.Array, channel: List[str] = None
+    ) -> None:
         """
         Adds selection to PackedSelection object and the cutflow dictionary
-        
-        github.com/cmantill/boostedhiggs/blob/main/boostedhiggs/hwwprocessor.py
+
+        taken from: github.com/cmantill/boostedhiggs/blob/main/boostedhiggs/hwwprocessor.py
         """
         channels = channel if channel else self._channels
         for ch in channels:
@@ -89,7 +81,7 @@ class TTBarControlRegionProcessor(processor.ProcessorABC):
     def accumulator(self):
         return self._accumulator
 
-    def process(self, events: ak.Array):
+    def process(self, events):
         dataset = events.metadata["dataset"]
         nevents = len(events)
 
@@ -102,22 +94,20 @@ class TTBarControlRegionProcessor(processor.ProcessorABC):
             self.weights_per_ch[ch] = []
             self.selections[ch] = PackedSelection()
             self.cutflows[ch] = {}
-
-        sumgenweight = ak.sum(events.genWeight) if self.isMC else 0
-
+            
         # luminosity
         if not self.isMC:
             lumi_mask = self._lumi_mask[self._year](events.run, events.luminosityBlock)
         else:
             lumi_mask = np.ones(len(events), dtype="bool")
-        
+            
         # MET filters
         metfilters = np.ones(nevents, dtype="bool")
         metfilterkey = "mc" if self.isMC else "data"
         for mf in self._metfilters[metfilterkey]:
             if mf in events.Flag.fields:
                 metfilters = metfilters & events.Flag[mf]
-
+                
         # triggers
         trigger = {}
         for ch in self._channels:
@@ -125,9 +115,8 @@ class TTBarControlRegionProcessor(processor.ProcessorABC):
             for t in self._triggers[ch]:
                 if t in events.HLT.fields:
                     trigger[ch] = trigger[ch] | events.HLT[t]
-        
-                
-        # deep taus
+                    
+        # taus
         deep_tau_ele = (
             (events.Tau.idDeepTau2017v2p1VSjet > 8)
             & (events.Tau.idDeepTau2017v2p1VSe > 1)
@@ -195,6 +184,9 @@ class TTBarControlRegionProcessor(processor.ProcessorABC):
         n_good_bjets = ak.sum(good_bjets, axis=1)
         candidatebjet = ak.firsts(events.Jet[good_bjets])
 
+        # lepton-bjet delta R
+        lep_bjet_dr = candidatebjet.delta_r(candidatelep_p4)
+        
         # MET
         met = events.MET
 
@@ -205,9 +197,6 @@ class TTBarControlRegionProcessor(processor.ProcessorABC):
             * met.pt
             * (ak.ones_like(met.pt) - np.cos(candidatelep_p4.delta_phi(met)))
         )
-
-        # delta R
-        lep_bjet_dr = candidatebjet.delta_r(candidatelep_p4)
 
         # output tuple variables
         variables = {
@@ -232,16 +221,15 @@ class TTBarControlRegionProcessor(processor.ProcessorABC):
             # genweight
             self.weights.add("genweight", events.genWeight)
 
-            # L1prefiring 
+            # L1prefiring
             if self._year in ("2016", "2017"):
                 self.weights.add(
                     "L1Prefiring",
-                    events.L1PreFiringWeight.Nom,
-                    events.L1PreFiringWeight.Up,
-                    events.L1PreFiringWeight.Dn,
+                    weight=events.L1PreFiringWeight.Nom,
+                    weightUp=events.L1PreFiringWeight.Up,
+                    weightDown=events.L1PreFiringWeight.Dn,
                 )
-
-            # pileup 
+            # pileup
             add_pileup_weight(
                 weights=self.weights,
                 year=self._year,
@@ -249,13 +237,17 @@ class TTBarControlRegionProcessor(processor.ProcessorABC):
                 nPU=ak.to_numpy(events.Pileup.nPU),
             )
 
-            # b-tagging 
-            self._btagSF = BTagCorrector(wp="M", tagger="deepJet", year=self._year, mod=self._yearmod)
-            self._btagSF.addBtagWeight(events.Jet[good_bjets], self.weights)
+            # b-tagging
+            self._btagSF = BTagCorrector(
+                wp="M", tagger="deepJet", year=self._year, mod=self._yearmod
+            )
+            self._btagSF.addBtagWeight(
+                jets=events.Jet[good_bjets], weights=self.weights
+            )
 
             # store the final common weights
             variables["common"]["weight"] = self.weights.weight()
-
+            
         # selections
         self.add_selection("trigger", trigger["mu"], ["mu"])
         self.add_selection("trigger", trigger["ele"], ["ele"])
@@ -279,18 +271,15 @@ class TTBarControlRegionProcessor(processor.ProcessorABC):
             # for data, only fill output for the dataset needed
             if not self.isMC and self.dataset_per_ch[ch] not in dataset:
                 fill_output = False
-
             selection_ch = self.selections[ch].all(*self.selections[ch].names)
 
             # only fill output for that channel if the selections yield any events
             if np.sum(selection_ch) <= 0:
                 fill_output = False
-
             if fill_output:
                 keys = ["common"]
                 if ch == "ele" or ch == "mu":
                     keys += ["lep"]
-
                 out = {}
                 for key in keys:
                     for var, item in variables[key].items():
@@ -302,33 +291,32 @@ class TTBarControlRegionProcessor(processor.ProcessorABC):
                         )
                         # fill out dictionary
                         out[var] = item
-
                 # fill the output dictionary after selections
                 output[ch] = {key: value[selection_ch] for (key, value) in out.items()}
-
             else:
                 output[ch] = {}
-
             # convert arrays to pandas
             if not isinstance(output[ch], pd.DataFrame):
                 output[ch] = ak_to_pandas(output[ch])
-
         # now save pandas dataframe
         save_output(
             events,
-            dataset, 
-            output, 
+            dataset,
+            output,
             self._year,
             self._channels,
-            self._output_location, 
-            self._dir_name
+            self._output_location,
+            self._dir_name,
         )
 
         # return dictionary with cutflows
         return {
             dataset: {
                 "mc": self.isMC,
-                self._year: {"sumgenweight": sumgenweight, "cutflows": self.cutflows},
+                self._year: {
+                    "sumgenweight": ak.sum(events.genWeight) if self.isMC else 0,
+                    "cutflows": self.cutflows,
+                },
             }
         }
 
