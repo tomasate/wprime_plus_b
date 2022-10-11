@@ -27,8 +27,11 @@ def main(args):
             "tls://daniel-2eocampo-2ehenao-40cern-2ech.dask.cmsaf-prod.flatiron.hollandhpc.org:8786"
         )
         # https://github.com/dask/distributed/issues/6202
-        plugin = PipInstall(packages=["git+https://github.com/deoache/b_lepton_met.git"])
-        client.register_worker_plugin(plugin)
+        #plugin = PipInstall(packages=["git+https://github.com/deoache/b_lepton_met.git"])
+        #client.register_worker_plugin(plugin)
+        client.upload_file("analysis/ttbar_processor.py")
+        client.upload_file("analysis/corrections.py")
+        client.upload_file("analysis/utils.py")
         
         executor_args.update({"client": client})
 

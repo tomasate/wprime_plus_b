@@ -111,7 +111,7 @@ class BTagCorrector:
 
         # btag working points (only for deepJet)
         # https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation
-        with open("/home/cms-jovyan/b_lepton_met/data/btagWPs.json", "rb") as handle:
+        with open("/home/cms-jovyan/wprime_plus_b/data/btagWPs.json", "rb") as handle:
             btagWPs = json.load(handle)
         self._btagwp = btagWPs[tagger][year + mod][wp]
 
@@ -122,7 +122,7 @@ class BTagCorrector:
 
         # efficiency lookup
         self.efflookup = util.load(
-            f"/home/cms-jovyan/b_lepton_met/data/btageff_{self._tagger}_{self._wp}_{self._year}.coffea"
+            f"/home/cms-jovyan/wprime_plus_b/data/btageff_{self._tagger}_{self._wp}_{self._year}.coffea"
         )
 
     def lighttagSF(self, j, syst="central"):

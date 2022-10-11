@@ -9,8 +9,8 @@ import pyarrow.parquet as pq
 from coffea import processor
 from coffea.nanoevents import NanoEventsFactory, NanoAODSchema
 from coffea.analysis_tools import Weights, PackedSelection
-from .corrections import add_pileup_weight, BTagCorrector
-from .utils import normalize, pad_val, build_p4, ak_to_pandas, save_output 
+#from .corrections import add_pileup_weight, BTagCorrector
+#from .utils import normalize, pad_val, build_p4, ak_to_pandas, save_output 
 from typing import List
 
 
@@ -31,26 +31,26 @@ class TTBarControlRegionProcessor(processor.ProcessorABC):
 
         # open triggers
         with open(
-            "/home/cms-jovyan/b_lepton_met/data/triggers.json", "r"
+            "/home/cms-jovyan/wprime_plus_b/data/triggers.json", "r"
         ) as f:
             self._triggers = json.load(f)[self._year]
 
         # open btagDeepFlavB
         with open(
-            "/home/cms-jovyan/b_lepton_met/data/btagDeepFlavB.json", "r"
+            "/home/cms-jovyan/wprime_plus_b/data/btagDeepFlavB.json", "r"
         ) as f:
             self._btagDeepFlavB = json.load(f)[self._year]
 
         # open met filters
         # https://twiki.cern.ch/twiki/bin/view/CMS/MissingETOptionalFiltersRun2
         with open(
-            "/home/cms-jovyan/b_lepton_met/data/metfilters.json", "rb"
+            "/home/cms-jovyan/wprime_plus_b/data/metfilters.json", "rb"
         ) as handle:
             self._metfilters = json.load(handle)[self._year]
             
         # open lumi masks
         with open(
-            "/home/cms-jovyan/b_lepton_met/data/lumi_masks.pkl", "rb"
+            "/home/cms-jovyan/wprime_plus_b/data/lumi_masks.pkl", "rb"
         ) as handle:
             self._lumi_mask = pickle.load(handle)
 
