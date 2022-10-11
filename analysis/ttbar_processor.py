@@ -9,7 +9,7 @@ import pyarrow.parquet as pq
 from coffea import processor
 from coffea.nanoevents import NanoEventsFactory, NanoAODSchema
 from coffea.analysis_tools import Weights, PackedSelection
-from .corrections import PileUPCorrector, BTagCorrector
+from .corrections import add_pileup_weight, BTagCorrector
 from .utils import normalize, pad_val, build_p4, ak_to_pandas, save_output 
 from typing import List
 
@@ -242,11 +242,10 @@ class TTBarControlRegionProcessor(processor.ProcessorABC):
                 )
 
             # pileup 
-            self._pileup = PileUPCorrector()
-            self._pileup.add_pileup_weight(
-                self.weights,
-                self._year,
-                self._yearmod,
+            add_pileup_weight(
+                weights=self.weights,
+                year=self._year,
+                mod=self._yearmod,
                 nPU=ak.to_numpy(events.Pileup.nPU),
             )
 

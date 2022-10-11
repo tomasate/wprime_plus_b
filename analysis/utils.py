@@ -104,7 +104,7 @@ def save_output(
     creates output folders and save dfs to parquet files
     """
     with open(
-        "b_lepton_met/data/simplified_samples.json", "r"
+        "/home/cms-jovyan/b_lepton_met/data/simplified_samples.json", "r"
     ) as f:
         simplified_samples = json.load(f)
 
@@ -135,3 +135,7 @@ def save_output(
             + partition_key
         )
         save_dfs_parquet(fname, output[ch])
+        
+        
+
+    
