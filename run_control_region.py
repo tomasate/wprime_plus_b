@@ -3,7 +3,7 @@ import pickle
 import argparse
 from datetime import datetime
 from coffea import processor
-from control_region_processor import ControlRegionProcessor
+from analysis.ttbar_cr_processor import TTBarControlRegionProcessor
 from dask.distributed import Client
 
 
@@ -36,7 +36,7 @@ def main(args):
     out = processor.run_uproot_job(
         fileset,
         treename="Events",
-        processor_instance=ControlRegionProcessor(
+        processor_instance=TTBarControlRegionProcessor(
             year=args.year,
             yearmod=args.yearmod,
             output_location=args.output_location,
