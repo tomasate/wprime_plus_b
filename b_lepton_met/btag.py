@@ -113,7 +113,7 @@ class BTagCorrector:
 
         # efficiency lookup
         self.efflookup = util.load(
-            f"b_lepton_met/data/btageff_{self._tagger}_{self._wp}_{self._year}.coffea"
+            f"/data/btageff_{self._tagger}_{self._wp}_{self._year}.coffea"
         )
 
     def lighttagSF(self, j, syst="central"):
