@@ -17,28 +17,26 @@ POG_JSONS = {
     "muon": ["MUO", "muon_Z.json.gz"],
     "electron": ["EGM", "electron.json.gz"],
     "pileup": ["LUM", "puWeights.json.gz"],
-    "btag": ["BTV", "btagging.json.gz"]
+    "btag": ["BTV", "btagging.json.gz"],
 }
 
 POG_YEARS = {
     "2016": "2016postVFP_UL",
     "2016APV": "2016preVFP_UL",
     "2017": "2017_UL",
-    "2018": "2018_UL"
+    "2018": "2018_UL",
 }
 
-# taggers
 TAGGER_BRANCH = {
     "deepJet": "btagDeepFlavB",
     "deepCSV": "btagDeep",
 }
-    
-    
-    
+
+
 def get_pog_json(json_name: str, year: str) -> str:
     """
     returns the path to the pog json file
-    
+
     Parameters:
     -----------
         json_name:
@@ -55,8 +53,8 @@ def get_pog_json(json_name: str, year: str) -> str:
 
 def add_pileup_weight(weights, year, mod, nPU):
     """
-    add pileup weight 
-    
+    add pileup weight
+
     Parameters:
     -----------
         weights:
@@ -69,7 +67,9 @@ def add_pileup_weight(weights, year, mod, nPU):
             number of true interactions (events.Pileup.nPU)
     """
     # correction set
-    cset = correctionlib.CorrectionSet.from_file(get_pog_json(json_name="pileup", year=year + mod))
+    cset = correctionlib.CorrectionSet.from_file(
+        get_pog_json(json_name="pileup", year=year + mod)
+    )
 
     year_to_corr = {
         "2016": "Collisions16_UltraLegacy_goldenJSON",
@@ -84,45 +84,47 @@ def add_pileup_weight(weights, year, mod, nPU):
 
     # add weights (for now only the nominal weight)
     weights.add("pileup", values["nominal"], values["up"], values["down"])
-        
-        
-  
+
+
 class BTagCorrector:
-    def __init__(self, wp: str, tagger: str = "deepJet", year: str = "2017", mod: str = ""):
+    def __init__(
+        self, wp: str, tagger: str = "deepJet", year: str = "2017", mod: str = ""
+    ):
         """
         BTag corrector object
-        
+
         Parameters:.coffea
         -----------
             wp:
-                worging point (L, M or T) 
+                worging point (L, M or T)
             tagger:
                 tagger (deepJet or deepCSV)
             year:
                 dataset year
-            mod: 
+            mod:
                 year modifier ("" or "APV")
         """
         self._year = year + mod
         self._tagger = tagger
         self._wp = wp
         self._branch = TAGGER_BRANCH[tagger]
-        
-        
+
         # btag working points (only for deepJet)
         # https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation
         with open("/home/cms-jovyan/b_lepton_met/data/btagWPs.json", "rb") as handle:
             btagWPs = json.load(handle)
         self._btagwp = btagWPs[tagger][year + mod][wp]
-        
+
         # correction set
-        self._cset = correctionlib.CorrectionSet.from_file(get_pog_json(json_name="btag", year=year + mod))
-            
+        self._cset = correctionlib.CorrectionSet.from_file(
+            get_pog_json(json_name="btag", year=year + mod)
+        )
+
         # efficiency lookup
         self.efflookup = util.load(
             f"/home/cms-jovyan/b_lepton_met/data/btageff_{self._tagger}_{self._wp}_{self._year}.coffea"
         )
-        
+
     def lighttagSF(self, j, syst="central"):
         # syst: central, down, down_correlated, down_uncorrelated, up, up_correlated
         # until correctionlib handles jagged data natively we have to flatten and unflatten
@@ -152,12 +154,12 @@ class BTagCorrector:
     def addBtagWeight(self, jets, weights, label=""):
         """
         Adding one common multiplicative SF (including bcjets + lightjets)
-        
+
         Parameters:
         -----------
             weights:
                 Weights object from coffea.analysis_tools
-            jets: 
+            jets:
                 jets selected in your analysis
             label:
                 label for the weights (btagSF + label)
