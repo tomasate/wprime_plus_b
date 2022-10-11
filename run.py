@@ -15,8 +15,8 @@ def main(args):
 
     # define processor
     if args.processor == "ttbar":
-        from b_lepton_met.ttbar_cr_processor import TTBarControlRegionProcessor
-        p = TTBarControlRegionProcessor
+        from analysis.ttbar_processor import TTBarControlRegionProcessor
+        proc = TTBarControlRegionProcessor
                 
             
     # executor arguments
@@ -55,7 +55,7 @@ def main(args):
     out = processor.run_uproot_job(
         fileset,
         treename="Events",
-        processor_instance=p(
+        processor_instance=proc(
             year=args.year,
             yearmod=args.yearmod,
             output_location=args.output_location,
