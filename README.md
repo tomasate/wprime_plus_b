@@ -14,6 +14,11 @@ General note: [coffea-casa](https://coffea-casa.readthedocs.io/en/latest/cc_user
 
 TTbar Control Region processor that applies pre-selection and selection cuts (two bjets + one lepton + MET), and saves unbinned branches as parquet files.
 
+To test locally first (recommended), can do e.g.:
+
+```bash
+python run.py --executor iterative --year 2017 --processor ttbar --nfiles 1 
+```
 
 ## Scale factors
 
@@ -30,7 +35,7 @@ To do:
   
 
 
-### Setting up a coffea environment with conda
+## Setting up coffea environments
 
 <details><summary>Click to see details</summary>
 <p>
