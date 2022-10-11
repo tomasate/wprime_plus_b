@@ -107,7 +107,7 @@ if __name__ == "__main__":
         "--output_location",
         dest="output_location",
         type=str,
-        default="/home/cms-jovyan/b_lepton_met/b_lepton_met/outfiles/",
+        default="/home/cms-jovyan/b_lepton_met/data/outfiles/",
         help="output location",
     )
     parser.add_argument(
