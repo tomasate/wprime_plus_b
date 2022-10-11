@@ -4,11 +4,31 @@
 
 Python package for analyzing W' + b events in the electron and muon channels. The analysis uses a columnar framework to process input tree-based [NanoAOD](https://twiki.cern.ch/twiki/bin/view/CMSPublic/WorkBookNanoAOD) files using the [coffea](https://coffeateam.github.io/coffea/) and [scikit-hep](https://scikit-hep.org) Python libraries.
 
+## Processors
+
+All processors can be found in the `analysis` directory. 
+
+General note: [coffea-casa](https://coffea-casa.readthedocs.io/en/latest/cc_user.html) is faster and more convenient, however still somewhat experimental so for large of inputs and/or processors which may require heavier cpu/memory usage condor is recommended (To do)
+
+#### ttbar_processor
+
+TTbar Control Region processor that applies pre-selection and selection cuts (two bjets + one lepton + MET), and saves unbinned branches as parquet files.
+
+
 ## Scale factors
 
 We use the common json format for scale factors, hence the requirement to install [correctionlib](https://github.com/cms-nanoAOD/correctionlib).
 
-The scale factors themselves can be found in the central [POG repository](https://gitlab.cern.ch/cms-nanoAOD/jsonpog-integration), synced once a day with CVMFS: `/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration`. A summary of their content can be found [here](https://cms-nanoaod-integration.web.cern.ch/commonJSONSFs/)
+The scale factors themselves can be found in the central [POG repository](https://gitlab.cern.ch/cms-nanoAOD/jsonpog-integration), synced once a day with CVMFS: `/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration`. A summary of their content can be found [here](https://cms-nanoaod-integration.web.cern.ch/commonJSONSFs/).
+
+Implemented (`analysis/corrections.py`):
+* PileUP SF
+* BTag SF
+
+To do:
+* Lepton SF
+  
+
 
 ### Setting up a coffea environment with conda
 
