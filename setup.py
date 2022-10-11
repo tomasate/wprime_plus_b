@@ -10,7 +10,7 @@ setup(
         "Bug Tracker": "https://github.com/mike-huls/toolbox/issues"
     },
     license='MIT',
-    packages=["b_lepton_met"],#find_packages(),
+    packages=find_packages(),
     install_requires=[
           "coffea>=0.7.2",
           "correctionlib>=2.0.0rc6",
