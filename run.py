@@ -39,7 +39,7 @@ def main(args):
         
     # load fileset
     with open(
-        f"{loc_base}/fileset/fileset_{args.year}_UL_NANO.json", "r"
+        f"{loc_base}/data/fileset/fileset_{args.year}_UL_NANO.json", "r"
     ) as f:
         fileset = json.load(f)
 
