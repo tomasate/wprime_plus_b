@@ -1,16 +1,21 @@
+import os
+import sys
 import json
 import pickle
 import argparse
+import dask
 from datetime import datetime
 from coffea import processor
-
 from dask.distributed import Client
-
+from pathlib import Path
+from distributed.diagnostics.plugin import UploadDirectory
 
 def main(args):
+    loc_base = os.environ['PWD']
+
     # load fileset
     with open(
-        f"/home/cms-jovyan/b_lepton_met/fileset/fileset_{args.year}_UL_NANO.json", "r"
+        f"{loc_base}/fileset/fileset_{args.year}_UL_NANO.json", "r"
     ) as f:
         fileset = json.load(f)
 
@@ -23,7 +28,6 @@ def main(args):
 
     # define processor
     if args.processor == "ttbar":
-        print(f"using TTBarControlRegionProcessor")
         from analysis.ttbar_cr_processor import TTBarControlRegionProcessor
         p = TTBarControlRegionProcessor
                 
@@ -36,6 +40,30 @@ def main(args):
         client = Client(
             "tls://daniel-2eocampo-2ehenao-40cern-2ech.dask.cmsaf-prod.flatiron.hollandhpc.org:8786"
         )
+        def set_env():
+            os.environ["PYTHONPATH"] = loc_base
+        
+        print(client.run(set_env))
+        print(client.run(lambda: os.environ["PYTHONPATH"]))
+        
+        #print(dask.config.get("jobqueue.coffea-casa.local-directory"))
+        #dask.config.set({"jobqueue.coffea-casa.local-directory": f"{loc_base}/analysis"})
+        #os.system(F"export DASK_JOBQUEUE__COFFEA-CASA__LOCAL-DIRECTORY={loc_base}")
+        #print(dask.config.get("jobqueue.coffea-casa.local-directory"))
+        #print(json.dumps(dask.config.config, indent=4))
+        # https://distributed.dask.org/en/stable/plugins.html#built-in-nanny-plugins
+
+        try:
+            client.register_worker_plugin(UploadDirectory(loc_base, restart=True), nanny=True)
+        except OSError:
+            print(f"failed to upload directory {loc_base}")
+        """
+        p = Path(f"{loc_base}/analysis").glob('**/*.py')
+        files = [x for x in p if x.is_file()]
+        for file in files:
+            print(str(file), type(str(file)))
+            client.upload_file(str(file))
+        """
         executor_args = {"schema": processor.NanoAODSchema, "client": client}
 
     # run processor
@@ -62,7 +90,6 @@ def main(args):
         args.output_location + args.dir_name + date + "/" + "out.pkl", "wb"
     ) as handle:
         pickle.dump(out, handle, protocol=pickle.HIGHEST_PROTOCOL)
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

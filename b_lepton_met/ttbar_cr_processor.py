@@ -9,9 +9,9 @@ import pyarrow.parquet as pq
 from coffea import processor
 from coffea.nanoevents import NanoEventsFactory, NanoAODSchema
 from coffea.analysis_tools import Weights, PackedSelection
-from analysis.corrections import add_pileup_weight
-from analysis.btag import btagWPs, BTagCorrector
-from analysis.utils import normalize, pad_val, build_p4, ak_to_pandas, save_output 
+from .corrections import add_pileup_weight
+from .btag import btagWPs, BTagCorrector
+from .utils import normalize, pad_val, build_p4, ak_to_pandas, save_output 
 from typing import List
 
 
