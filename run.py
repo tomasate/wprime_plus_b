@@ -7,7 +7,6 @@ import dask
 from datetime import datetime
 from coffea import processor
 from dask.distributed import Client, PipInstall
-from typing import List
 
 
 def main(args):
@@ -18,13 +17,10 @@ def main(args):
         from analysis.ttbar_processor import TTBarControlRegionProcessor
         proc = TTBarControlRegionProcessor
                 
-            
     # executor arguments
-    if args.executor == "iterative":
-        
-        executor_args = {
-            "schema": processor.NanoAODSchema,
-        }
+    executor_args = {
+        "schema": processor.NanoAODSchema,
+    }
         
     if args.executor == "dask":
         client = Client(
@@ -34,7 +30,7 @@ def main(args):
         #plugin = PipInstall(packages=["git+https://github.com/deoache/b_lepton_met.git"])
         #client.register_worker_plugin(plugin)
         
-        executor_args = {"schema": processor.NanoAODSchema, "client": client}
+        executor_args.update({"client": client})
 
         
     # load fileset
@@ -97,7 +93,7 @@ if __name__ == "__main__":
         dest="nfiles",
         type=int,
         default=1,
-        help="number of files per sample",
+        help="number of files per sample (all: -1)",
     )
     parser.add_argument("--year", dest="year", type=str, default="2017", help="year")
     parser.add_argument(
