@@ -6,9 +6,11 @@ import argparse
 import dask
 from datetime import datetime
 from coffea import processor
-from dask.distributed import Client
+from dask.distributed import Client, Worker, WorkerPlugin
 from pathlib import Path
 from distributed.diagnostics.plugin import UploadDirectory
+from typing import List
+
 
 def main(args):
     loc_base = os.environ['PWD']
@@ -37,34 +39,22 @@ def main(args):
             "schema": processor.NanoAODSchema,
         }
     elif args.executor == "dask":
+        class DependencyInstaller(WorkerPlugin):
+            def __init__(self, dependencies: List[str]):
+                self._dependencies = " ".join(f"'{dep}'" for dep in dependencies)
+
+            def setup(self, worker: Worker):
+                os.system(f"pip install {self._dependencies}")
+
+        dependency_installer = DependencyInstaller([
+            "git+https://github.com/deoache/b_lepton_met.git",
+        ])
+        
         client = Client(
             "tls://daniel-2eocampo-2ehenao-40cern-2ech.dask.cmsaf-prod.flatiron.hollandhpc.org:8786"
         )
+        client.register_worker_plugin(dependency_installer)
         
-        #def set_env():
-        #    os.environ["PYTHONPATH"] = loc_base
-        
-        #print(client.run(set_env))
-        #print(client.run(lambda: os.environ["PYTHONPATH"]))
-        
-        #print(dask.config.get("jobqueue.coffea-casa.local-directory"))
-        #dask.config.set({"jobqueue.coffea-casa.local-directory": f"{loc_base}/analysis"})
-        #os.system(F"export DASK_JOBQUEUE__COFFEA-CASA__LOCAL-DIRECTORY={loc_base}")
-        #print(dask.config.get("jobqueue.coffea-casa.local-directory"))
-        #print(json.dumps(dask.config.config, indent=4))
-        # https://distributed.dask.org/en/stable/plugins.html#built-in-nanny-plugins
-
-        #try:
-        #    client.register_worker_plugin(UploadDirectory(loc_base, restart=True), nanny=True)
-        #except OSError:
-        #    print(f"failed to upload directory {loc_base}")
-        """
-        p = Path(f"{loc_base}/analysis").glob('**/*.py')
-        files = [x for x in p if x.is_file()]
-        for file in files:
-            print(str(file), type(str(file)))
-            client.upload_file(str(file))
-        """
         executor_args = {"schema": processor.NanoAODSchema, "client": client}
 
     # run processor
