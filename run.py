@@ -40,11 +40,12 @@ def main(args):
         client = Client(
             "tls://daniel-2eocampo-2ehenao-40cern-2ech.dask.cmsaf-prod.flatiron.hollandhpc.org:8786"
         )
-        def set_env():
-            os.environ["PYTHONPATH"] = loc_base
         
-        print(client.run(set_env))
-        print(client.run(lambda: os.environ["PYTHONPATH"]))
+        #def set_env():
+        #    os.environ["PYTHONPATH"] = loc_base
+        
+        #print(client.run(set_env))
+        #print(client.run(lambda: os.environ["PYTHONPATH"]))
         
         #print(dask.config.get("jobqueue.coffea-casa.local-directory"))
         #dask.config.set({"jobqueue.coffea-casa.local-directory": f"{loc_base}/analysis"})
@@ -53,10 +54,10 @@ def main(args):
         #print(json.dumps(dask.config.config, indent=4))
         # https://distributed.dask.org/en/stable/plugins.html#built-in-nanny-plugins
 
-        try:
-            client.register_worker_plugin(UploadDirectory(loc_base, restart=True), nanny=True)
-        except OSError:
-            print(f"failed to upload directory {loc_base}")
+        #try:
+        #    client.register_worker_plugin(UploadDirectory(loc_base, restart=True), nanny=True)
+        #except OSError:
+        #    print(f"failed to upload directory {loc_base}")
         """
         p = Path(f"{loc_base}/analysis").glob('**/*.py')
         files = [x for x in p if x.is_file()]
@@ -122,7 +123,7 @@ if __name__ == "__main__":
         "--output_location",
         dest="output_location",
         type=str,
-        default="/home/cms-jovyan/b_lepton_met/analysis/outfiles/",
+        default="/home/cms-jovyan/b_lepton_met/b_lepton_met/outfiles/",
         help="output location",
     )
     parser.add_argument(
