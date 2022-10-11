@@ -50,7 +50,7 @@ class TTBarControlRegionProcessor(processor.ProcessorABC):
             
         # open lumi masks
         with open(
-            "/home/cms-jovyan/b_lepton_met/analysis/corrections/data/lumi_masks.pkl", "rb"
+            "/home/cms-jovyan/b_lepton_met/data/lumi_masks.pkl", "rb"
         ) as handle:
             self._lumi_mask = pickle.load(handle)
 
