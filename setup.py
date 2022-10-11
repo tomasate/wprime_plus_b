@@ -7,7 +7,7 @@ setup(
     description='WPrime + b analysis',
     url='https://github.com/deoache/b_lepton_met',
     license='MIT',
-    packages=find_packages(),
+    packages=["analysis"],#find_packages(),
     install_requires=[
           "coffea>=0.7.2",
           "correctionlib>=2.0.0rc6",
