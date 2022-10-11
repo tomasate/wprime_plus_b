@@ -28,7 +28,7 @@ def main(args):
 
     # define processor
     if args.processor == "ttbar":
-        from analysis.ttbar_cr_processor import TTBarControlRegionProcessor
+        from b_lepton_met.ttbar_cr_processor import TTBarControlRegionProcessor
         p = TTBarControlRegionProcessor
                 
     # executor arguments
