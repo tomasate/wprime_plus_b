@@ -9,7 +9,7 @@ import pyarrow.parquet as pq
 from coffea import processor
 from coffea.nanoevents import NanoEventsFactory, NanoAODSchema
 from coffea.analysis_tools import Weights, PackedSelection
-from b_lepton_met.corrections import add_pileup_weight
+from analysis.corrections import corrections, btag, add_pileup_weight
 from b_lepton_met.btag import btagWPs, BTagCorrector
 from b_lepton_met.utils import normalize, pad_val, build_p4, ak_to_pandas, save_output 
 from typing import List
@@ -32,21 +32,15 @@ class TTBarControlRegionProcessor(processor.ProcessorABC):
 
         # open triggers
         with open(
-            "/home/cms-jovyan/b_lepton_met/b_lepton_met/data/triggers.json", "r"
+            "/home/cms-jovyan/b_lepton_met/data/triggers.json", "r"
         ) as f:
             self._triggers = json.load(f)[self._year]
 
         # open btagDeepFlavB
         with open(
-            "/home/cms-jovyan/b_lepton_met/b_lepton_met/data/btagDeepFlavB.json", "r"
+            "/home/cms-jovyan/b_lepton_met/data/btagDeepFlavB.json", "r"
         ) as f:
             self._btagDeepFlavB = json.load(f)[self._year]
-
-        # open lumi masks
-        with open(
-            "/home/cms-jovyan/b_lepton_met/b_lepton_met/data/lumi_masks.pkl", "rb"
-        ) as handle:
-            self._lumi_mask = pickle.load(handle)
 
         # open met filters
         # https://twiki.cern.ch/twiki/bin/view/CMS/MissingETOptionalFiltersRun2
@@ -54,6 +48,12 @@ class TTBarControlRegionProcessor(processor.ProcessorABC):
             "/home/cms-jovyan/b_lepton_met/b_lepton_met/data/metfilters.json", "rb"
         ) as handle:
             self._metfilters = json.load(handle)[self._year]
+            
+        # open lumi masks
+        with open(
+            "/home/cms-jovyan/b_lepton_met/analysis/corrections/data/lumi_masks.pkl", "rb"
+        ) as handle:
+            self._lumi_mask = pickle.load(handle)
 
         if year == "2018":
             self.dataset_per_ch = {
@@ -130,7 +130,7 @@ class TTBarControlRegionProcessor(processor.ProcessorABC):
         # b-tagging corrector
         self._btagWPs = btagWPs["deepJet"][self._year + self._yearmod]
         self._btagSF = BTagCorrector("M", "deepJet", self._year, self._yearmod)
-
+                
         # deep taus
         deep_tau_ele = (
             (events.Tau.idDeepTau2017v2p1VSjet > 8)
@@ -245,7 +245,7 @@ class TTBarControlRegionProcessor(processor.ProcessorABC):
                 )
 
             # pileup 
-            add_pileup_weight(
+            corrections.add_pileup_weight(
                 self.weights,
                 self._year,
                 self._yearmod,

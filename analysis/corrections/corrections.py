@@ -1,16 +1,13 @@
 import correctionlib
 
 
-"""
-CorrectionLib files are available from: /cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration - synced daily
-"""
+# CorrectionLib files are available from: /cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration - synced daily
 pog_correction_path = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/"
 pog_jsons = {
     # "muon": ["MUO", "muon_Z.json.gz"],
     # "electron": ["EGM", "electron.json.gz"],
     "pileup": ["LUM", "puWeights.json.gz"],
 }
-
 
 def get_UL_year(year):
     if year == "2016":
