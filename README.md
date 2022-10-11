@@ -1,1 +1,95 @@
-# b+lepton+met
+# W' + b
+
+[![Codestyle](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+
+Python package for analyzing W' + b events in the electron and muon channels. The analysis uses a columnar framework to process input tree-based [NanoAOD](https://twiki.cern.ch/twiki/bin/view/CMSPublic/WorkBookNanoAOD) files using the [coffea](https://coffeateam.github.io/coffea/) and [scikit-hep](https://scikit-hep.org) Python libraries.
+
+## Scale factors
+
+We use the common json format for scale factors, hence the requirement to install [correctionlib](https://github.com/cms-nanoAOD/correctionlib).
+
+The scale factors themselves can be found in the central [POG repository](https://gitlab.cern.ch/cms-nanoAOD/jsonpog-integration), synced once a day with CVMFS: `/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration`. A summary of their content can be found [here](https://cms-nanoaod-integration.web.cern.ch/commonJSONSFs/)
+
+### Setting up a coffea environment with conda
+
+<details><summary>Click to see details</summary>
+<p>
+
+#### Install miniconda (if you do not have it already)
+In your lxplus area or in your local computer:
+```
+# download miniconda
+wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+
+# run and follow instructions  
+bash Miniconda3-latest-Linux-x86_64.sh
+
+# Make sure to choose `yes` for the following one to let the installer initialize Miniconda3
+# > Do you wish the installer to initialize Miniconda3
+# > by running conda init? [yes|no]
+```
+Verify the installation is successful by running conda info and check if the paths are pointing to your Miniconda installation. 
+If you cannot run conda command, check if you need to add the conda path to your PATH variable in your bashrc/zshrc file, e.g.,
+```
+export PATH="$HOME/nobackup/miniconda3/bin:$PATH"
+```
+To disable auto activation of the base environment:
+```
+conda config --set auto_activate_base false
+```
+
+#### Set up a conda environment and install the required packages
+```
+# create a new conda environment
+conda create -n coffea-env python=3.7
+
+# activate the environment
+conda activate coffea-env
+
+# install packages
+pip install numpy pandas coffea correctionlib pyarrow
+
+# install xrootd
+conda install -c conda-forge xrootd
+```
+
+</p>
+</details>
+
+## Data fileset
+
+The fileset json files that contain a dictionary of the files per sample are in the `data/fileset` directory.
+
+<details><summary>Click to see details</summary>
+<p>
+
+#### Re-making the input dataset files with DAS
+
+```
+# connect to lxplus with a port forward to access the jupyter notebook server
+ssh <your_username>@lxplus.cern.ch localhost:8800 localhost:8800
+
+# create a working directory and clone the repo (if you have not done yet)
+git clone https://github.com/deoache/wprime_plus_b
+
+# enable the coffea environment
+conda activate coffea-env
+
+# then activate your proxy
+voms-proxy-init --voms cms --valid 100:00
+
+# activate cmsset
+source /cvmfs/cms.cern.ch/cmsset_default.sh
+
+# open the jupyter notebook on a browser
+cd data/fileset/
+jupyter notebook --no-browser --port 8800
+```
+
+there should be a link looking like `http://localhost:8800/?token=...`, displayed in the output at this point, paste that into your browser.
+You should see a jupyter notebook with a directory listing.
+
+Open `filesetDAS.ipynb` and run it. The json files containing the datasets to be run should be saved in the same `data/fileset/` directory.
+  
+</p>
+</details>
