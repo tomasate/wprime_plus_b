@@ -1,3 +1,4 @@
+import json
 import correctionlib
 import importlib.resources
 import awkward as ak
@@ -67,8 +68,9 @@ class PileUPCorrector:
 # ---------------------------------
 # b-tagging
 # ---------------------------------
+# b-tag workin points
 with open("/home/cms-jovyan/b_lepton_met/data/btagWPs.json", "rb") as handle:
-    btagWPs = json.load(handle)[self._year]
+    btagWPs = json.load(handle)
 
 class BTagEfficiency(processor.ProcessorABC):
     def __init__(self, year="2017"):
@@ -93,7 +95,8 @@ class BTagEfficiency(processor.ProcessorABC):
             & events.Jet.isTight
             & (events.Jet.puId > 0)
         ]
-
+       
+        
         out = self.accumulator.identity()
         tags = [
             ("deepJet", "btagDeepFlavB", "M"),
@@ -121,8 +124,9 @@ class BTagCorrector:
         self._year = year + mod
         self._tagger = tagger
         self._wp = wp
-        self._btagwp = btagWPs[tagger][year + mod][wp]
         self._branch = "btagDeepFlavB"
+        self._btagwp = btagWPs[tagger][year + mod][wp]
+        
 
         # more docs at https://cms-nanoaod-integration.web.cern.ch/commonJSONSFs/BTV_btagging_Run2_UL/BTV_btagging_201*_UL.html
         if year == "2016":
