@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='analysis',
+    name='b_lepton_met',
     version='0.0.1',
     author_email='daniel.ocampoh@udea.edu.co',
     description='WPrime + b analysis',
