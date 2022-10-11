@@ -6,29 +6,13 @@ import argparse
 import dask
 from datetime import datetime
 from coffea import processor
-from dask.distributed import Client, Worker, WorkerPlugin
-from pathlib import Path
-from distributed.diagnostics.plugin import UploadDirectory
+from dask.distributed import Client, PipInstall
 from typing import List
 
 
 def main(args):
     loc_base = os.environ['PWD']
 
-    # load fileset
-    with open(
-        f"{loc_base}/fileset/fileset_{args.year}_UL_NANO.json", "r"
-    ) as f:
-        fileset = json.load(f)
-
-    for key, val in fileset.items():
-        if val is not None:
-            if args.nfiles == -1:
-                fileset[key] = ["root://xcache/" + file for file in val]
-            else:
-                fileset[key] = ["root://xcache/" + file for file in val[: args.nfiles]]
-
-                
     # define processor
     if args.processor == "ttbar":
         from b_lepton_met.ttbar_cr_processor import TTBarControlRegionProcessor
@@ -43,25 +27,30 @@ def main(args):
         }
         
     if args.executor == "dask":
-        class DependencyInstaller(WorkerPlugin):
-            def __init__(self, dependencies: List[str]):
-                self._dependencies = " ".join(f"'{dep}'" for dep in dependencies)
-
-            def setup(self, worker: Worker):
-                os.system(f"pip install {self._dependencies}")
-
-        dependency_installer = DependencyInstaller([
-            "git+https://github.com/deoache/b_lepton_met.git",
-        ])
-        
         client = Client(
             "tls://daniel-2eocampo-2ehenao-40cern-2ech.dask.cmsaf-prod.flatiron.hollandhpc.org:8786"
         )
-        client.register_worker_plugin(dependency_installer)
+        # https://github.com/dask/distributed/issues/6202
+        plugin = PipInstall(packages=["git+https://github.com/deoache/b_lepton_met.git"])
+        client.register_worker_plugin(plugin)
         
         executor_args = {"schema": processor.NanoAODSchema, "client": client}
 
         
+    # load fileset
+    with open(
+        f"{loc_base}/fileset/fileset_{args.year}_UL_NANO.json", "r"
+    ) as f:
+        fileset = json.load(f)
+
+    for key, val in fileset.items():
+        if val is not None:
+            if args.nfiles == -1:
+                fileset[key] = ["root://xcache/" + file for file in val]
+            else:
+                fileset[key] = ["root://xcache/" + file for file in val[: args.nfiles]]
+                
+                
     # run processor
     out = processor.run_uproot_job(
         fileset,

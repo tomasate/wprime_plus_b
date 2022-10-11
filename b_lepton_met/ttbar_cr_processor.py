@@ -253,7 +253,7 @@ class TTBarControlRegionProcessor(processor.ProcessorABC):
             )
 
             # b-tagging 
-            #self._btagSF.addBtagWeight(events.Jet[good_bjets], self.weights)
+            self._btagSF.addBtagWeight(events.Jet[good_bjets], self.weights)
 
             # store the final common weights
             variables["common"]["weight"] = self.weights.weight()
