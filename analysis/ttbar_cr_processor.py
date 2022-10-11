@@ -15,7 +15,7 @@ from analysis.utils import normalize, pad_val, build_p4, ak_to_pandas, save_outp
 from typing import List
 
 
-class ControlRegionProcessor(processor.ProcessorABC):
+class TTBarControlRegionProcessor(processor.ProcessorABC):
     def __init__(
         self,
         year: str = "2017",
