@@ -1,10 +1,10 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='b_lepton_met',
+    name='analysis',
     version='0.0.1',
     author_email='daniel.ocampoh@udea.edu.co',
-    description='W prime analysis',
+    description='WPrime + b analysis',
     url='https://github.com/deoache/b_lepton_met',
     license='MIT',
     packages=find_packages(),
