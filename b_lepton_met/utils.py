@@ -104,7 +104,7 @@ def save_output(
     creates output folders and save dfs to parquet files
     """
     with open(
-        "data/simplified_samples.json", "r"
+        "b_lepton_met/data/simplified_samples.json", "r"
     ) as f:
         simplified_samples = json.load(f)
 
