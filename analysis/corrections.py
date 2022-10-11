@@ -101,7 +101,7 @@ class BTagCorrector:
         """
         BTag corrector object
 
-        Parameters:.coffea
+        Parameters:
         -----------
             wp:
                 worging point (L, M or T)
