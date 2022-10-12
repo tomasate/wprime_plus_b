@@ -1,10 +1,12 @@
 import json
 import correctionlib
+import importlib.resources
 import awkward as ak
 import numpy as np
-from coffea import util
-from coffea.lookup_tools.correctionlib_wrapper import correctionlib_wrapper
-from coffea.lookup_tools.dense_lookup import dense_lookup
+import pickle as pkl
+from typing import Type
+from coffea import processor, hist, util
+from coffea.analysis_tools import Weights
 
 
 # CorrectionLib files are available from
@@ -131,7 +133,7 @@ class BTagCorrector:
             f"/home/cms-jovyan/wprime_plus_b/data/btageff_{self._tagger}_{self._wp}_{self._year}.coffea"
         )
 
-    def btagSF(self, j, syst="central"):
+    def btag_SF(self, j, syst="central"):
         # syst: central, down, down_correlated, down_uncorrelated, up, up_correlated
         # until correctionlib handles jagged data natively we have to flatten and unflatten
         j, nj = ak.flatten(j), ak.num(j)
@@ -144,7 +146,7 @@ class BTagCorrector:
         )
         return ak.unflatten(sf, nj)
 
-    def addBtagWeight(self, jets: ak.Array, weights: Type[Weights]):
+    def add_btag_weight(self, jets: ak.Array, weights: Type[Weights]):
         """
         Adding SF
 
@@ -162,7 +164,7 @@ class BTagCorrector:
         bEff = self.efflookup(bjets.hadronFlavour, bjets.pt, abs(bjets.eta))
 
         # b-tag nominal scale factors
-        bSF = self.btagSF(bjets, "central")
+        bSF = self.btag_SF(bjets, "central")
 
         # mask for events passing the btag working point
         bPass = bjets[self._branch] > self._btagwp
