@@ -176,7 +176,7 @@ class TTBarControlRegionProcessor(processor.ProcessorABC):
         # b-jets
         # IS btagDeepFlavB YEAR AND CHANNEL DEPENDENT?
         good_bjets = (
-            (ak.firsts(events.Jet.pt) > 30)
+            (events.Jet.pt > 30)
             & (events.Jet.jetId == 6)
             & (events.Jet.puId == 7)
             & (events.Jet.btagDeepFlavB > self._btagDeepFlavB)
@@ -241,7 +241,7 @@ class TTBarControlRegionProcessor(processor.ProcessorABC):
             self._btagSF = BTagCorrector(
                 wp="M", tagger="deepJet", year=self._year, mod=self._yearmod
             )
-            self._btagSF.addBtagWeight(
+            self._btagSF.add_btag_weight(
                 jets=events.Jet[good_bjets], weights=self.weights
             )
 
