@@ -1,11 +1,9 @@
 import json
 import correctionlib
-import importlib.resources
-import awkward as ak
 import numpy as np
-import pickle as pkl
+import awkward as ak
 from typing import Type
-from coffea import processor, hist, util
+from coffea import util
 from coffea.analysis_tools import Weights
 
 
