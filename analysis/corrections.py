@@ -2,12 +2,9 @@ import json
 import correctionlib
 import awkward as ak
 import numpy as np
-import pickle as pkl
-from typing import Type
-from coffea import processor, hist, util
+from coffea import util
 from coffea.lookup_tools.correctionlib_wrapper import correctionlib_wrapper
 from coffea.lookup_tools.dense_lookup import dense_lookup
-from coffea.analysis_tools import Weights
 
 
 # CorrectionLib files are available from
@@ -41,7 +38,7 @@ def get_pog_json(json_name: str, year: str) -> str:
     Parameters:
     -----------
         json_name:
-            json key name (muon, electron, pileup or btag)
+            json name (muon, electron, pileup or btag)
         year:
             dataset year
     """
@@ -52,9 +49,7 @@ def get_pog_json(json_name: str, year: str) -> str:
     return f"{POG_CORRECTION_PATH}/POG/{pog_json[0]}/{POG_YEARS[year]}/{pog_json[1]}"
 
 
-def add_pileup_weight(
-    weights: Type[Weights], year: str, mod: str, nPU: ak.Array
-) -> None:
+def add_pileup_weight(weights, year, mod, nPU):
     """
     add pileup weight
 
@@ -86,23 +81,25 @@ def add_pileup_weight(
     values["down"] = cset[year_to_corr[year]].evaluate(nPU, "down")
 
     # add weights (for now only the nominal weight)
-    weights.add(
-        name="pileup",
-        weight=values["nominal"],
-        weightUp=values["up"],
-        weightDown=values["down"],
-    )
+    weights.add("pileup", values["nominal"], values["up"], values["down"])
 
 
 class BTagCorrector:
     def __init__(
-        self, wp: str, tagger: str = "deepJet", year: str = "2017", mod: str = ""
+        self,
+        sf: str = "comb",
+        wp: str = "M",
+        tagger: str = "deepJet",
+        year: str = "2017",
+        mod: str = "",
     ):
         """
         BTag corrector object
 
-        Parameters:
+        Parameters:.coffea
         -----------
+            sf:
+                scale factors to use (mujets or comb)
             wp:
                 worging point (L, M or T)
             tagger:
@@ -112,6 +109,7 @@ class BTagCorrector:
             mod:
                 year modifier ("" or "APV")
         """
+        self._sf = sf
         self._year = year + mod
         self._tagger = tagger
         self._wp = wp
@@ -133,11 +131,11 @@ class BTagCorrector:
             f"/home/cms-jovyan/wprime_plus_b/data/btageff_{self._tagger}_{self._wp}_{self._year}.coffea"
         )
 
-    def lighttagSF(self, j, syst="central") -> ak.Array:
+    def btagSF(self, j, syst="central"):
         # syst: central, down, down_correlated, down_uncorrelated, up, up_correlated
         # until correctionlib handles jagged data natively we have to flatten and unflatten
         j, nj = ak.flatten(j), ak.num(j)
-        sf = self._cset["%s_incl" % self._tagger].evaluate(
+        sf = self._cset[f"{self._tagger}_{self._sf}"].evaluate(
             syst,
             self._wp,
             np.array(j.hadronFlavour),
@@ -146,62 +144,36 @@ class BTagCorrector:
         )
         return ak.unflatten(sf, nj)
 
-    def btagSF(self, j, syst="central") -> ak.Array:
-        # syst: central, down, down_correlated, down_uncorrelated, up, up_correlated
-        # until correctionlib handles jagged data natively we have to flatten and unflatten
-        j, nj = ak.flatten(j), ak.num(j)
-        sf = self._cset["%s_comb" % self._tagger].evaluate(
-            syst,
-            self._wp,
-            np.array(j.hadronFlavour),
-            np.array(abs(j.eta)),
-            np.array(j.pt),
-        )
-        return ak.unflatten(sf, nj)
-
-    def addBtagWeight(
-        self,
-        jets: ak.Array,
-        weights: Type[Weights],
-        label: str = "",
-    ) -> None:
+    def addBtagWeight(self, jets: ak.Array, weights: Type[Weights]):
         """
-        Adding one common multiplicative SF (including bcjets + lightjets)
+        Adding SF
 
         Parameters:
         -----------
-            weights:
-                Weights object from coffea.analysis_tools
             jets:
                 jets selected in your analysis
-            label:
-                label for the weights (btagSF + label)
+            weights:
+                Weights object from coffea.analysis_tools
         """
+        # bjets (hadron flavor definition: 5=b, 4=c, 0=udsg)
+        bjets = jets[(jets.hadronFlavour > 0) & (abs(jets.eta) < 2.5)]
 
-        lightJets = jets[(jets.hadronFlavour == 0) & (abs(jets.eta) < 2.5)]
-        bcJets = jets[(jets.hadronFlavour > 0) & (abs(jets.eta) < 2.5)]
+        # b-tag efficiency
+        bEff = self.efflookup(bjets.hadronFlavour, bjets.pt, abs(bjets.eta))
 
-        lightEff = self.efflookup(
-            lightJets.hadronFlavour, lightJets.pt, abs(lightJets.eta)
-        )
-        bcEff = self.efflookup(bcJets.hadronFlavour, bcJets.pt, abs(bcJets.eta))
+        # b-tag nominal scale factors
+        bSF = self.btagSF(bjets, "central")
 
-        lightPass = lightJets[self._branch] > self._btagwp
-        bcPass = bcJets[self._branch] > self._btagwp
+        # mask for events passing the btag working point
+        bPass = bjets[self._branch] > self._btagwp
 
-        def combine(eff, sf, passbtag):
-            # tagged SF = SF*eff / eff = SF
-            tagged_sf = ak.prod(sf[passbtag], axis=-1)
-            # untagged SF = (1 - SF*eff) / (1 - eff)
-            untagged_sf = ak.prod(((1 - sf * eff) / (1 - eff))[~passbtag], axis=-1)
+        # tagged SF = SF*eff / eff = SF
+        tagged_sf = ak.prod(bSF[bPass], axis=-1)
+        # untagged SF = (1 - SF*eff) / (1 - eff)
+        untagged_sf = ak.prod(((1 - bSF * bEff) / (1 - bEff))[~bPass], axis=-1)
 
-            return ak.fill_none(tagged_sf * untagged_sf, 1.0)
+        # combine eff and SF as tagged SF * untagged SF
+        nominal_weight = ak.fill_none(tagged_sf * untagged_sf, 1.0)
 
-        lightweight = combine(
-            lightEff, self.lighttagSF(lightJets, "central"), lightPass
-        )
-        bcweight = combine(bcEff, self.btagSF(bcJets, "central"), bcPass)
-
-        # nominal weight = btagSF (btagSFbc*btagSFlight)
-        nominal = lightweight * bcweight
-        weights.add(name="btagSF" + label, weight=nominal)
+        # add nominal weight
+        weights.add("btagSF", nominal_weight)
