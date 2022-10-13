@@ -97,7 +97,7 @@ def add_electronID_weight(
 
     # add weights
     weights.add(
-        name="electronID",
+        name=f"electronID_{wp}",
         weight=values["nominal"],
         weightUp=values["up"],
         weightDown=values["down"],
