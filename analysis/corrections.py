@@ -193,15 +193,22 @@ class BTagCorrector:
 # ----------------------------------
 # lepton scale factors
 # -----------------------------------
+#
+# Electron
+#    - ID: wp80noiso?
+#    - Recon: RecoAbove20?
+#    - Trigger: ?
+#
+# working points: (Loose, Medium, RecoAbove20, RecoBelow20, Tight, Veto, wp80iso, wp80noiso, wp90iso, wp90noiso)
+#
 def add_electronID_weight(
     weights: Type[Weights],
     electron: ak.Array,
-    wp: str,
     year: str,
     mod: str = "",
 ):
     """
-    add electron ID scale factor
+    add electron identification scale factor
 
     Parameters:
     -----------
@@ -209,8 +216,6 @@ def add_electronID_weight(
             Weights object from coffea.analysis_tools
         electron:
             Electron collection
-        wp:
-            Working point (Loose, Medium, RecoAbove20, RecoBelow20, Tight, Veto, wp80iso, wp80noiso, wp90iso, wp90noiso)
         year:
             Year of the dataset
         mod:
@@ -220,7 +225,7 @@ def add_electronID_weight(
     cset = correctionlib.CorrectionSet.from_file(
         get_pog_json(json_name="electron", year=year + mod)
     )
-    # electron pseudorapidity
+    # electron pseudorapidity range: (-inf, inf)
     electron_eta = np.array(ak.fill_none(electron.eta, 0.0))
 
     # electron pt range: [10, inf)
@@ -232,6 +237,10 @@ def add_electronID_weight(
     # remove _UL from year
     year = POG_YEARS[year + mod].replace("_UL", "")
 
+    # working point
+    wp = "wp80noiso"
+
+    # scale factors
     values = {}
     values["nominal"] = cset["UL-Electron-ID-SF"].evaluate(
         year, "sf", wp, electron_eta, electron_pt
@@ -251,14 +260,142 @@ def add_electronID_weight(
     )
 
 
-def add_muonID_weight(
+def add_electronReco_weight(
+    weights: Type[Weights],
+    electron: ak.Array,
+    year: str,
+    mod: str = "",
+):
+    """
+    add electron reconstruction scale factor
+
+    Parameters:
+    -----------
+        weights:
+            Weights object from coffea.analysis_tools
+        electron:
+            Electron collection
+        year:
+            Year of the dataset
+        mod:
+            Year modifier ('' or 'APV')
+    """
+    # correction set
+    cset = correctionlib.CorrectionSet.from_file(
+        get_pog_json(json_name="electron", year=year + mod)
+    )
+    # electron pseudorapidity range: (-inf, inf)
+    electron_eta = np.array(ak.fill_none(electron.eta, 0.0))
+
+    # electron pt range: (20, inf)
+    electron_pt = np.array(ak.fill_none(electron.pt, 0.0))
+    electron_pt = np.clip(
+        electron_pt, 20.1, 499.999
+    )  # potential problems with pt > 500 GeV
+
+    # remove _UL from year
+    year = POG_YEARS[year + mod].replace("_UL", "")
+
+    # scale factors
+    values = {}
+    values["nominal"] = cset["UL-Electron-ID-SF"].evaluate(
+        year, "sf", "RecoAbove20", electron_eta, electron_pt
+    )
+    values["up"] = cset["UL-Electron-ID-SF"].evaluate(
+        year, "sfup", "RecoAbove20", electron_eta, electron_pt
+    )
+    values["down"] = cset["UL-Electron-ID-SF"].evaluate(
+        year, "sfdown", "RecoAbove20", electron_eta, electron_pt
+    )
+
+    weights.add(
+        name=f"electronRecoAbove20",
+        weight=values["nominal"],
+        weightUp=values["up"],
+        weightDown=values["down"],
+    )
+
+
+# Muon
+#
+# https://twiki.cern.ch/twiki/bin/view/CMS/MuonUL2016
+# https://twiki.cern.ch/twiki/bin/view/CMS/MuonUL2017
+# https://twiki.cern.ch/twiki/bin/view/CMS/MuonUL2018
+#
+#    - ID: medium prompt ID NUM_MediumPromptID_DEN_TrackerMuon?
+#    - Iso: LooseRelIso with mediumID (NUM_LooseRelIso_DEN_MediumID)?
+#    - Trigger iso:
+#          2016: for IsoMu24 (and IsoTkMu24?) NUM_IsoMu24_or_IsoTkMu24_DEN_CutBasedIdTight_and_PFIsoTight?
+#          2017: for isoMu27 NUM_IsoMu27_DEN_CutBasedIdTight_and_PFIsoTight?
+#          2018: for IsoMu24 NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight?
+#
+def add_muon_weight(
+    weights: Type[Weights],
+    muon: ak.Array,
+    sf_type: str,
+    year: str,
+    mod: str = "",
+):
+    """
+    add muon ID (MediumPromptID) or Iso (LooseRelIso with mediumID) scale factors
+
+    Parameters:
+    -----------
+        weights:
+            Weights object from coffea.analysis_tools
+        muon:
+            Muon collection
+        sf_type:
+            Type of scale factor ('id', 'iso')
+        year:
+            Year of the dataset
+        mod:
+            Year modifier ('' or 'APV')
+    """
+    # correction set
+    cset = correctionlib.CorrectionSet.from_file(
+        get_pog_json(json_name="muon", year=year + mod)
+    )
+    # muon absolute pseudorapidity range: [0, 2.4)
+    muon_eta = np.abs(np.array(ak.fill_none(muon.eta, 0.0)))
+    muon_eta = np.clip(muon_eta, 0.0, 2.399)
+
+    # muon pt range: [15, 120)
+    muon_pt = np.array(ak.fill_none(muon.pt, 0.0))
+    muon_pt = np.clip(muon_pt, 15.0, 119.999)
+
+    # scale factors
+    sfs_keys = {
+        "id": "NUM_MediumPromptID_DEN_TrackerMuons",
+        "iso": "NUM_LooseRelIso_DEN_MediumID",
+    }
+
+    values = {}
+    values["nominal"] = cset[sfs_keys[sf_type]].evaluate(
+        POG_YEARS[year + mod], muon_eta, muon_pt, "sf"
+    )
+    values["up"] = cset[sfs_keys[sf_type]].evaluate(
+        POG_YEARS[year + mod], muon_eta, muon_pt, "systup"
+    )
+    values["down"] = cset[sfs_keys[sf_type]].evaluate(
+        POG_YEARS[year + mod], muon_eta, muon_pt, "systdown"
+    )
+    weights.add(
+        name=f"muon{sf_type.capitalize()}",
+        weight=values["nominal"],
+        weightUp=values["up"],
+        weightDown=values["down"],
+    )
+
+
+def add_muonTriggerIso_weight(
     weights: Type[Weights],
     muon: ak.Array,
     year: str,
     mod: str = "",
 ):
     """
-    add muon ID scale factor (Medium ID)
+    add muon Trigger Iso (IsoMu24 or IsoMu27) scale factors
 
     Parameters:
     -----------
@@ -277,24 +414,31 @@ def add_muonID_weight(
     )
     # muon absolute pseudorapidity range: [0, 2.4)
     muon_eta = np.abs(np.array(ak.fill_none(muon.eta, 0.0)))
-    muon_eta = np.clip(muon_eta, 0.0, 2.4)
+    muon_eta = np.clip(muon_eta, 0.0, 2.399)
 
-    # muon pt range: [15, 120)
+    # muon pt range: [29, 200)
     muon_pt = np.array(ak.fill_none(muon.pt, 0.0))
-    muon_pt = np.clip(muon_pt, 15.0, 120.0)
+    muon_pt = np.clip(muon_pt, 29.0, 199.999)
+
+    # scale factors
+    sfs_keys = {
+        "2016": "NUM_IsoMu24_or_IsoTkMu24_DEN_CutBasedIdTight_and_PFIsoTight",
+        "2017": "NUM_IsoMu27_DEN_CutBasedIdTight_and_PFIsoTight",
+        "2018": "NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight",
+    }
 
     values = {}
-    values["nominal"] = cset["NUM_MediumID_DEN_TrackerMuons"].evaluate(
+    values["nominal"] = cset[sfs_keys[year]].evaluate(
         POG_YEARS[year + mod], muon_eta, muon_pt, "sf"
     )
-    values["up"] = cset["NUM_MediumID_DEN_TrackerMuons"].evaluate(
+    values["up"] = cset[sfs_keys[year]].evaluate(
         POG_YEARS[year + mod], muon_eta, muon_pt, "systup"
     )
-    values["down"] = cset["NUM_MediumID_DEN_TrackerMuons"].evaluate(
+    values["down"] = cset[sfs_keys[year]].evaluate(
         POG_YEARS[year + mod], muon_eta, muon_pt, "systdown"
     )
     weights.add(
-        name="muon_MediumID",
+        name="muonTriggerIso",
         weight=values["nominal"],
         weightUp=values["up"],
         weightDown=values["down"],
