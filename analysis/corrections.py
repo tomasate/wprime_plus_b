@@ -49,61 +49,9 @@ def get_pog_json(json_name: str, year: str) -> str:
     return f"{POG_CORRECTION_PATH}/POG/{pog_json[0]}/{POG_YEARS[year]}/{pog_json[1]}"
 
 
-def add_electronID_weight(
-    weights: Type[Weights], year: str, mod: str, wp: str, electron: ak.Array
-):
-    """
-    add lepton ID scale factor
-
-    Parameters:
-    -----------
-        weights:
-            Weights object from coffea.analysis_tools
-        year:
-            Year of the dataset
-        mod:
-            Year modifier ('' or 'APV')
-        wp:
-            Working point (Loose, Medium, RecoAbove20, RecoBelow20, Tight, Veto, wp80iso, wp80noiso, wp90iso, wp90noiso)
-        electron:
-            Electron collection
-    """
-    # correction set
-    cset = correctionlib.CorrectionSet.from_file(
-        get_pog_json(json_name="electron", year=year + mod)
-    )
-    # electron pseudorapidity
-    electron_eta = np.array(ak.fill_none(electron.eta, 0.0))
-
-    # electron pt range must be [10, inf)
-    electron_pt = np.array(ak.fill_none(electron.pt, 0.0))
-    electron_pt = np.clip(
-        electron_pt, 10.0, 499.999
-    )  # potential problems with pt > 500 GeV
-
-    # remove _UL from year
-    year = POG_YEARS[year + mod].replace("_UL", "")
-
-    values = {}
-    values["nominal"] = cset["UL-Electron-ID-SF"].evaluate(
-        year, "sf", wp, electron_eta, electron_pt
-    )
-    values["up"] = cset["UL-Electron-ID-SF"].evaluate(
-        year, "sfup", wp, electron_eta, electron_pt
-    )
-    values["down"] = cset["UL-Electron-ID-SF"].evaluate(
-        year, "sfdown", wp, electron_eta, electron_pt
-    )
-
-    # add weights
-    weights.add(
-        name=f"electronID_{wp}",
-        weight=values["nominal"],
-        weightUp=values["up"],
-        weightDown=values["down"],
-    )
-
-
+# ----------------------------------
+# pileup scale factors
+# -----------------------------------
 def add_pileup_weight(weights: Type[Weights], year: str, mod: str, nPU: ak.Array):
     """
     add pileup scale factor
@@ -144,6 +92,9 @@ def add_pileup_weight(weights: Type[Weights], year: str, mod: str, nPU: ak.Array
     )
 
 
+# ----------------------------------
+# b-tagging scale factors
+# -----------------------------------
 class BTagCorrector:
     def __init__(
         self,
@@ -236,4 +187,115 @@ class BTagCorrector:
         nominal_weight = ak.fill_none(tagged_sf * untagged_sf, 1.0)
 
         # add nominal weight
-        weights.add("btagSF", nominal_weight)
+        weights.add(name="btagSF", weight=nominal_weight)
+
+
+# ----------------------------------
+# lepton scale factors
+# -----------------------------------
+def add_electronID_weight(
+    weights: Type[Weights],
+    electron: ak.Array,
+    wp: str,
+    year: str,
+    mod: str = "",
+):
+    """
+    add electron ID scale factor
+
+    Parameters:
+    -----------
+        weights:
+            Weights object from coffea.analysis_tools
+        electron:
+            Electron collection
+        wp:
+            Working point (Loose, Medium, RecoAbove20, RecoBelow20, Tight, Veto, wp80iso, wp80noiso, wp90iso, wp90noiso)
+        year:
+            Year of the dataset
+        mod:
+            Year modifier ('' or 'APV')
+    """
+    # correction set
+    cset = correctionlib.CorrectionSet.from_file(
+        get_pog_json(json_name="electron", year=year + mod)
+    )
+    # electron pseudorapidity
+    electron_eta = np.array(ak.fill_none(electron.eta, 0.0))
+
+    # electron pt range: [10, inf)
+    electron_pt = np.array(ak.fill_none(electron.pt, 0.0))
+    electron_pt = np.clip(
+        electron_pt, 10.0, 499.999
+    )  # potential problems with pt > 500 GeV
+
+    # remove _UL from year
+    year = POG_YEARS[year + mod].replace("_UL", "")
+
+    values = {}
+    values["nominal"] = cset["UL-Electron-ID-SF"].evaluate(
+        year, "sf", wp, electron_eta, electron_pt
+    )
+    values["up"] = cset["UL-Electron-ID-SF"].evaluate(
+        year, "sfup", wp, electron_eta, electron_pt
+    )
+    values["down"] = cset["UL-Electron-ID-SF"].evaluate(
+        year, "sfdown", wp, electron_eta, electron_pt
+    )
+
+    weights.add(
+        name=f"electronID_{wp}",
+        weight=values["nominal"],
+        weightUp=values["up"],
+        weightDown=values["down"],
+    )
+
+
+def add_muonID_weight(
+    weights: Type[Weights],
+    muon: ak.Array,
+    year: str,
+    mod: str = "",
+):
+    """
+    add muon ID scale factor (Medium ID)
+
+    Parameters:
+    -----------
+        weights:
+            Weights object from coffea.analysis_tools
+        muon:
+            Muon collection
+        year:
+            Year of the dataset
+        mod:
+            Year modifier ('' or 'APV')
+    """
+    # correction set
+    cset = correctionlib.CorrectionSet.from_file(
+        get_pog_json(json_name="muon", year=year + mod)
+    )
+    # muon absolute pseudorapidity range: [0, 2.4)
+    muon_eta = np.abs(np.array(ak.fill_none(muon.eta, 0.0)))
+    muon_eta = np.clip(muon_eta, 0.0, 2.4)
+
+    # muon pt range: [15, 120)
+    muon_pt = np.array(ak.fill_none(muon.pt, 0.0))
+    muon_pt = np.clip(muon_pt, 15.0, 120.0)
+
+    values = {}
+    values["nominal"] = cset["NUM_MediumID_DEN_TrackerMuons"].evaluate(
+        POG_YEARS[year + mod], muon_eta, muon_pt, "sf"
+    )
+    values["up"] = cset["NUM_MediumID_DEN_TrackerMuons"].evaluate(
+        POG_YEARS[year + mod], muon_eta, muon_pt, "systup"
+    )
+    values["down"] = cset["NUM_MediumID_DEN_TrackerMuons"].evaluate(
+        POG_YEARS[year + mod], muon_eta, muon_pt, "systdown"
+    )
+    weights.add(
+        name="muon_MediumID",
+        weight=values["nominal"],
+        weightUp=values["up"],
+        weightDown=values["down"],
+    )
