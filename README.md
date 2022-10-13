@@ -2,7 +2,7 @@
 
 [![Codestyle](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
-Python package for analyzing W' + b events in the electron and muon channels. The analysis uses a columnar framework to process input tree-based [NanoAOD](https://twiki.cern.ch/twiki/bin/view/CMSPublic/WorkBookNanoAOD) files using the [coffea](https://coffeateam.github.io/coffea/) and [scikit-hep](https://scikit-hep.org) Python libraries.
+Python package for analyzing W' + b in the electron and muon channels. The analysis uses a columnar framework to process input tree-based [NanoAOD](https://twiki.cern.ch/twiki/bin/view/CMSPublic/WorkBookNanoAOD) files using the [coffea](https://coffeateam.github.io/coffea/) and [scikit-hep](https://scikit-hep.org) Python libraries.
 
 ## Processors
 
@@ -14,23 +14,22 @@ To test locally first (recommended), can do e.g.:
 python run.py --executor iterative --year 2017 --processor ttbar --nfiles 1 
 ```
 
-General note: [coffea-casa](https://coffea-casa.readthedocs.io/en/latest/cc_user.html) is faster and more convenient, however still somewhat experimental so for large of inputs and/or processors which may require heavier cpu/memory usage condor is recommended (To do)
+General note: [coffea-casa](https://coffea-casa.readthedocs.io/en/latest/cc_user.html) is faster and more convenient, however still somewhat experimental so for large of inputs and/or processors which may require heavier cpu/memory Condor is recommended.
 
 
 ## Scale factors
 
-We use the common json format for scale factors, hence the requirement to install [correctionlib](https://github.com/cms-nanoAOD/correctionlib).
+We use the common json format for scale factors (SF), hence the requirement to install [correctionlib](https://github.com/cms-nanoAOD/correctionlib). The SF themselves can be found in the central [POG repository](https://gitlab.cern.ch/cms-nanoAOD/jsonpog-integration), synced once a day with CVMFS: `/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration`. A summary of their content can be found [here](https://cms-nanoaod-integration.web.cern.ch/commonJSONSFs/). The SF used in this analysis are:
 
-The scale factors themselves can be found in the central [POG repository](https://gitlab.cern.ch/cms-nanoAOD/jsonpog-integration), synced once a day with CVMFS: `/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration`. A summary of their content can be found [here](https://cms-nanoaod-integration.web.cern.ch/commonJSONSFs/).
-
-Implemented (`analysis/corrections.py`):
-* PileUP SF
-* BTag SF
-
-To do:
-* Lepton SF
+* Pileup
+* b-tagging
+* Electron ID
+* Electron Reconstruction
+* Muon ID
+* Muon Iso
+* Muon TriggerIso
   
-
+These SF are implemented as weights (See [corrections](analysis/corrections.py))
 
 ## Setting up coffea environments
 
