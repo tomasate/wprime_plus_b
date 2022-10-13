@@ -49,9 +49,64 @@ def get_pog_json(json_name: str, year: str) -> str:
     return f"{POG_CORRECTION_PATH}/POG/{pog_json[0]}/{POG_YEARS[year]}/{pog_json[1]}"
 
 
-def add_pileup_weight(weights, year, mod, nPU):
+def add_electronID_weight(
+    weights: Type[Weights], year: str, mod: str, wp: str, electron: ak.Array
+):
     """
-    add pileup weight
+    add lepton ID scale factor
+
+    Parameters:
+    -----------
+        weights:
+            Weights object from coffea.analysis_tools
+        year:
+            Year of the dataset
+        mod:
+            Year modifier ('' or 'APV')
+        wp:
+            Working point (Loose, Medium, RecoAbove20, RecoBelow20, Tight, Veto, wp80iso, wp80noiso, wp90iso, wp90noiso)
+        electron:
+            Electron collection
+    """
+    # correction set
+    cset = correctionlib.CorrectionSet.from_file(
+        get_pog_json(json_name="electron", year=year + mod)
+    )
+    # electron pseudorapidity
+    electron_eta = np.array(ak.fill_none(electron.eta, 0.0))
+
+    # electron pt range must be [10, inf)
+    electron_pt = np.array(ak.fill_none(electron.pt, 0.0))
+    electron_pt = np.clip(
+        electron_pt, 10.0, 499.999
+    )  # potential problems with pt > 500 GeV
+
+    # remove _UL from year
+    year = POG_YEARS[year + mod].replace("_UL", "")
+
+    values = {}
+    values["nominal"] = cset["UL-Electron-ID-SF"].evaluate(
+        year, "sf", wp, electron_eta, electron_pt
+    )
+    values["up"] = cset["UL-Electron-ID-SF"].evaluate(
+        year, "sfup", wp, electron_eta, electron_pt
+    )
+    values["down"] = cset["UL-Electron-ID-SF"].evaluate(
+        year, "sfdown", wp, electron_eta, electron_pt
+    )
+
+    # add weights
+    weights.add(
+        name="electronID",
+        weight=values["nominal"],
+        weightUp=values["up"],
+        weightDown=values["down"],
+    )
+
+
+def add_pileup_weight(weights: Type[Weights], year: str, mod: str, nPU: ak.Array):
+    """
+    add pileup scale factor
 
     Parameters:
     -----------
@@ -80,8 +135,13 @@ def add_pileup_weight(weights, year, mod, nPU):
     values["up"] = cset[year_to_corr[year]].evaluate(nPU, "up")
     values["down"] = cset[year_to_corr[year]].evaluate(nPU, "down")
 
-    # add weights (for now only the nominal weight)
-    weights.add("pileup", values["nominal"], values["up"], values["down"])
+    # add weights
+    weights.add(
+        name="pileup",
+        weight=values["nominal"],
+        weightUp=values["up"],
+        weightDown=values["down"],
+    )
 
 
 class BTagCorrector:
@@ -146,7 +206,7 @@ class BTagCorrector:
 
     def add_btag_weight(self, jets: ak.Array, weights: Type[Weights]):
         """
-        Adding SF
+        add b-tagging scale factor
 
         Parameters:
         -----------
