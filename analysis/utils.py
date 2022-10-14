@@ -113,16 +113,18 @@ def save_output(
 
     # creating directories for each channel and sample
     for ch in channels:
-        if not os.path.exists(output_location + dir_name + date + "/" + ch):
-            os.makedirs(output_location + dir_name + date + "/" + ch)
+        if not os.path.exists(output_location + dir_name + date + "/" + "/" + year + "/" + ch):
+            os.makedirs(output_location + dir_name + date + "/" + year + "/" + ch)
         if not os.path.exists(
-            output_location + dir_name + date + "/" + ch + "/" + sample
+            output_location + dir_name + date + "/" + year + "/" + ch + "/" + sample
         ):
-            os.makedirs(output_location + dir_name + date + "/" + ch + "/" + sample)
+            os.makedirs(output_location + dir_name + date + "/" + year + "/" + ch + "/" + sample)
         fname = (
             output_location
             + dir_name
             + date
+            + "/"
+            + year
             + "/"
             + ch
             + "/"
