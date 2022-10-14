@@ -28,22 +28,18 @@ class TTBarControlRegionProcessor(processor.ProcessorABC):
         # open triggers
         with open("/home/cms-jovyan/wprime_plus_b/data/triggers.json", "r") as f:
             self._triggers = json.load(f)[self._year]
-            
         # open btagDeepFlavB
         with open("/home/cms-jovyan/wprime_plus_b/data/btagDeepFlavB.json", "r") as f:
             self._btagDeepFlavB = json.load(f)[self._year]
-            
         # open met filters
         # https://twiki.cern.ch/twiki/bin/view/CMS/MissingETOptionalFiltersRun2
         with open(
             "/home/cms-jovyan/wprime_plus_b/data/metfilters.json", "rb"
         ) as handle:
             self._metfilters = json.load(handle)[self._year]
-            
         # open lumi masks
         with open("/home/cms-jovyan/wprime_plus_b/data/lumi_masks.pkl", "rb") as handle:
             self._lumi_mask = pickle.load(handle)
-            
         if year == "2018":
             self.dataset_per_ch = {
                 "ele": "EGamma",
@@ -54,10 +50,10 @@ class TTBarControlRegionProcessor(processor.ProcessorABC):
                 "ele": "SingleElectron",
                 "mu": "SingleMuon",
             }
-            
-        self.common_weights = ["L1Prefiring", "pileup", "btagSF"]
+        self.common_weights = ["genweight", "L1Prefiring", "pileup", "btagSF"]
+        self.electron_weights = ["electronID_wp80noiso", "electronRecoAbove20"]
+        self.muon_weights = ["muonId", "muonIso", "muonTriggerIso"]
 
-        
     def add_selection(
         self, name: str, sel: ak.Array, channel: List[str] = None
     ) -> None:
@@ -95,13 +91,11 @@ class TTBarControlRegionProcessor(processor.ProcessorABC):
             self.weights_per_ch[ch] = []
             self.selections[ch] = PackedSelection()
             self.cutflows[ch] = {}
-            
         # luminosity
         if not self.isMC:
             lumi_mask = self._lumi_mask[self._year](events.run, events.luminosityBlock)
         else:
             lumi_mask = np.ones(len(events), dtype="bool")
-            
         # MET filters
         metfilters = np.ones(nevents, dtype="bool")
         metfilterkey = "mc" if self.isMC else "data"
@@ -219,7 +213,7 @@ class TTBarControlRegionProcessor(processor.ProcessorABC):
         weigths = {}
         if self.isMC:
             # genweight
-            # self.weights.add("genweight", events.genWeight)
+            self.weights.add("genweight", events.genWeight)
             # L1prefiring
             if self._year in ("2016", "2017"):
                 self.weights.add(
@@ -251,25 +245,23 @@ class TTBarControlRegionProcessor(processor.ProcessorABC):
                     mod=self._yearmod,
                     channel=ch,
                 )
-            # store the final common weight
-            variables["common"]["weight"] = self.weights.partial_weight(
+            # store common weights
+            for weight in self.common_weights:
+                variables["common"][weight] = self.weights.partial_weight([weight])
+            variables["common"]["common_weight"] = self.weights.partial_weight(
                 self.common_weights
             )
-
-            # store the individual weights
-            for key in self.weights._weights.keys():
-                if "electron" in key:
-                    variables["ele"][f"weight_{key}"] = self.weights.partial_weight(
-                        [key]
-                    )
-                elif "muon" in key:
-                    variables["mu"][f"weight_{key}"] = self.weights.partial_weight(
-                        [key]
-                    )
-                else:
-                    variables["common"][f"weight_{key}"] = self.weights.partial_weight(
-                        [key]
-                    )
+            # store electron weights
+            for weight in self.electron_weights:
+                variables["ele"][weight] = self.weights.partial_weight([weight])
+            variables["ele"]["electron_weigths"] = self.weights.partial_weight(
+                [self.electron_weights]
+            )
+            # store muon weights
+            for weight in self.muon_weights:
+                variables["mu"][weight] = self.weights.partial_weight([weight])
+            variables["mu"][weight] = self.weights.partial_weight([self.muon_weights])
+            
         # selections
         self.add_selection("trigger", trigger["mu"], ["mu"])
         self.add_selection("trigger", trigger["ele"], ["ele"])
