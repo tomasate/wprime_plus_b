@@ -22,7 +22,7 @@ General note: [coffea-casa](https://coffea-casa.readthedocs.io/en/latest/cc_user
 We use the common json format for scale factors (SF), hence the requirement to install [correctionlib](https://github.com/cms-nanoAOD/correctionlib). The SF themselves can be found in the central [POG repository](https://gitlab.cern.ch/cms-nanoAOD/jsonpog-integration), synced once a day with CVMFS: `/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration`. A summary of their content can be found [here](https://cms-nanoaod-integration.web.cern.ch/commonJSONSFs/). The SF used in this analysis are:
 
 * Pileup
-* b-tagging
+* [b-tagging](analysis/notebooks/btag_corrections.ipynb)
 * Electron ID
 * Electron Reconstruction
 * Muon ID
