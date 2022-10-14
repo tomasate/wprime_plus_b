@@ -201,6 +201,7 @@ class TTBarControlRegionProcessor(processor.ProcessorABC):
             },
             "common": {
                 "met": met.pt,
+                "met_phi": met.phi,
                 "jet_pt": candidatebjet.pt,
                 "jet_eta": candidatebjet.eta,
                 "jet_phi": candidatebjet.phi,
