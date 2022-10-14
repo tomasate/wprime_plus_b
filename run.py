@@ -4,45 +4,39 @@ import json
 import pickle
 import argparse
 import dask
-import importlib.resources 
+import importlib.resources
 from datetime import datetime
 from coffea import processor
 from dask.distributed import Client, PipInstall
 
 
 def main(args):
-    loc_base = os.environ['PWD']
-                
+    loc_base = os.environ["PWD"]
+
     # executor arguments
     executor_args = {
         "schema": processor.NanoAODSchema,
     }
-        
+
     if args.executor == "dask":
         client = Client(
             "tls://daniel-2eocampo-2ehenao-40cern-2ech.dask.cmsaf-prod.flatiron.hollandhpc.org:8786"
         )
         executor_args.update({"client": client})
-        
     # define processor
     if args.processor == "ttbar":
         from analysis.ttbar_processor import TTBarControlRegionProcessor
         proc = TTBarControlRegionProcessor
         
     # load fileset
-    with open(
-        f"{loc_base}/data/fileset/fileset_{args.year}_UL_NANO.json", "r"
-    ) as f:
+    with open(f"{loc_base}/data/fileset/fileset_{args.year}_UL_NANO.json", "r") as f:
         fileset = json.load(f)
-
     for key, val in fileset.items():
         if val is not None:
             if args.nfiles == -1:
                 fileset[key] = ["root://xcache/" + file for file in val]
             else:
                 fileset[key] = ["root://xcache/" + file for file in val[: args.nfiles]]
-                
-                
     # run processor
     out = processor.run_uproot_job(
         fileset,
@@ -64,9 +58,11 @@ def main(args):
     # save dictionary with cutflows
     date = datetime.today().strftime("%Y-%m-%d")
     with open(
-        args.output_location + args.dir_name + date + "/" + "out.pkl", "wb"
+        args.output_location + args.dir_name + date + "/" + args.year + "/" + "out.pkl",
+        "wb",
     ) as handle:
         pickle.dump(out, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
