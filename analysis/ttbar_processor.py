@@ -236,15 +236,13 @@ class TTBarControlRegionProcessor(processor.ProcessorABC):
             self._btagSF.add_btag_weight(
                 jets=events.Jet[good_bjets], weights=self.weights
             )
-            # leptons
-            for ch in self._channels:
-                add_lepton_weights(
-                    weights=self.weights,
-                    candidatelep=candidatelep,
-                    year=self._year,
-                    mod=self._yearmod,
-                    channel=ch,
-                )
+            # lepton weights
+            add_lepton_weights(
+                weights=self.weights,
+                candidatelep=candidatelep,
+                year=self._year,
+                mod=self._yearmod,
+            )
             # store common weights
             for weight in self.common_weights:
                 variables["common"][f"{weight}_weight"] = self.weights.partial_weight(
