@@ -247,21 +247,28 @@ class TTBarControlRegionProcessor(processor.ProcessorABC):
                 )
             # store common weights
             for weight in self.common_weights:
-                variables["common"][weight] = self.weights.partial_weight([weight])
+                variables["common"][f"{weight}_weight"] = self.weights.partial_weight(
+                    [weight]
+                )
             variables["common"]["common_weight"] = self.weights.partial_weight(
                 self.common_weights
             )
             # store electron weights
             for weight in self.electron_weights:
-                variables["ele"][weight] = self.weights.partial_weight([weight])
-            variables["ele"]["electron_weigths"] = self.weights.partial_weight(
-                [self.electron_weights]
+                variables["ele"][f"{weight}_weight"] = self.weights.partial_weight(
+                    [weight]
+                )
+            variables["ele"]["electron_weigth"] = self.weights.partial_weight(
+                self.electron_weights
             )
             # store muon weights
             for weight in self.muon_weights:
-                variables["mu"][weight] = self.weights.partial_weight([weight])
-            variables["mu"][weight] = self.weights.partial_weight([self.muon_weights])
-            
+                variables["mu"][f"{weight}_weight"] = self.weights.partial_weight(
+                    [weight]
+                )
+            variables["mu"]["muon_weigth"] = self.weights.partial_weight(
+                self.muon_weights
+            )
         # selections
         self.add_selection("trigger", trigger["mu"], ["mu"])
         self.add_selection("trigger", trigger["ele"], ["ele"])
