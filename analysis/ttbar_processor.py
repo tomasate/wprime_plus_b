@@ -6,7 +6,7 @@ import awkward as ak
 from typing import List
 from coffea import processor
 from coffea.analysis_tools import Weights, PackedSelection
-from .corrections import add_pileup_weight, BTagCorrector
+from .corrections import add_pileup_weight, BTagCorrector, add_lepton_weights
 from .utils import normalize, pad_val, build_p4, ak_to_pandas, save_output
 
 
@@ -55,8 +55,9 @@ class TTBarControlRegionProcessor(processor.ProcessorABC):
                 "mu": "SingleMuon",
             }
             
-        self.common_weights = ["genweight", "L1Prefiring", "pileup", "btagSF"]
+        self.common_weights = ["L1Prefiring", "pileup", "btagSF"]
 
+        
     def add_selection(
         self, name: str, sel: ak.Array, channel: List[str] = None
     ) -> None:
@@ -107,7 +108,6 @@ class TTBarControlRegionProcessor(processor.ProcessorABC):
         for mf in self._metfilters[metfilterkey]:
             if mf in events.Flag.fields:
                 metfilters = metfilters & events.Flag[mf]
-                
         # triggers
         trigger = {}
         for ch in self._channels:
@@ -115,7 +115,6 @@ class TTBarControlRegionProcessor(processor.ProcessorABC):
             for t in self._triggers[ch]:
                 if t in events.HLT.fields:
                     trigger[ch] = trigger[ch] | events.HLT[t]
-                    
         # taus
         deep_tau_ele = (
             (events.Tau.idDeepTau2017v2p1VSjet > 8)
@@ -136,7 +135,7 @@ class TTBarControlRegionProcessor(processor.ProcessorABC):
 
         # electrons
         good_electrons = (
-            (events.Electron.pt > 0)
+            (events.Electron.pt > 30)
             & (np.abs(events.Electron.eta) < 2.4)
             & (
                 (np.abs(events.Electron.eta) < 1.44)
@@ -174,7 +173,6 @@ class TTBarControlRegionProcessor(processor.ProcessorABC):
         lep_miso = candidatelep.miniPFRelIso_all
 
         # b-jets
-        # IS btagDeepFlavB YEAR AND CHANNEL DEPENDENT?
         good_bjets = (
             (events.Jet.pt > 30)
             & (events.Jet.jetId == 6)
@@ -186,7 +184,7 @@ class TTBarControlRegionProcessor(processor.ProcessorABC):
 
         # lepton-bjet delta R
         lep_bjet_dr = candidatebjet.delta_r(candidatelep_p4)
-        
+
         # MET
         met = events.MET
 
@@ -213,14 +211,15 @@ class TTBarControlRegionProcessor(processor.ProcessorABC):
                 "jet_eta": candidatebjet.eta,
                 "jet_phi": candidatebjet.phi,
             },
+            "ele": {},
+            "mu": {},
         }
 
         # weights
         weigths = {}
         if self.isMC:
             # genweight
-            self.weights.add("genweight", events.genWeight)
-
+            # self.weights.add("genweight", events.genWeight)
             # L1prefiring
             if self._year in ("2016", "2017"):
                 self.weights.add(
@@ -236,7 +235,6 @@ class TTBarControlRegionProcessor(processor.ProcessorABC):
                 mod=self._yearmod,
                 nPU=ak.to_numpy(events.Pileup.nPU),
             )
-
             # b-tagging
             self._btagSF = BTagCorrector(
                 wp="M", tagger="deepJet", year=self._year, mod=self._yearmod
@@ -244,10 +242,34 @@ class TTBarControlRegionProcessor(processor.ProcessorABC):
             self._btagSF.add_btag_weight(
                 jets=events.Jet[good_bjets], weights=self.weights
             )
+            # leptons
+            for ch in self._channels:
+                add_lepton_weights(
+                    weights=self.weights,
+                    candidatelep=candidatelep,
+                    year=self._year,
+                    mod=self._yearmod,
+                    channel=ch,
+                )
+            # store the final common weight
+            variables["common"]["weight"] = self.weights.partial_weight(
+                self.common_weights
+            )
 
-            # store the final common weights
-            variables["common"]["weight"] = self.weights.weight()
-            
+            # store the individual weights
+            for key in self.weights._weights.keys():
+                if "electron" in key:
+                    variables["ele"][f"weight_{key}"] = self.weights.partial_weight(
+                        [key]
+                    )
+                elif "muon" in key:
+                    variables["mu"][f"weight_{key}"] = self.weights.partial_weight(
+                        [key]
+                    )
+                else:
+                    variables["common"][f"weight_{key}"] = self.weights.partial_weight(
+                        [key]
+                    )
         # selections
         self.add_selection("trigger", trigger["mu"], ["mu"])
         self.add_selection("trigger", trigger["ele"], ["ele"])
@@ -277,7 +299,7 @@ class TTBarControlRegionProcessor(processor.ProcessorABC):
             if np.sum(selection_ch) <= 0:
                 fill_output = False
             if fill_output:
-                keys = ["common"]
+                keys = ["common", "ele", "mu"]
                 if ch == "ele" or ch == "mu":
                     keys += ["lep"]
                 out = {}
