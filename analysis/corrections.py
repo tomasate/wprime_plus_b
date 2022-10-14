@@ -450,7 +450,6 @@ def add_lepton_weights(
     candidatelep: ak.Array,
     year: str,
     mod: str = "",
-    channel: str = None,
 ):
     """
     add lepton weights
@@ -465,13 +464,9 @@ def add_lepton_weights(
             Year of the dataset
         mod:
             Year modifier ('' or 'APV')
-        channel:
-            lepton channel
     """
-    if channel == "ele":
-        add_electronID_weight(weights, candidatelep, year, mod)
-        add_electronReco_weight(weights, candidatelep, year, mod)
-    if channel == "mu":
-        add_muon_weight(weights, candidatelep, "id", year, mod)
-        add_muon_weight(weights, candidatelep, "iso", year, mod)
-        add_muonTriggerIso_weight(weights, candidatelep, year, mod)
+    add_electronID_weight(weights, candidatelep, year, mod)
+    add_electronReco_weight(weights, candidatelep, year, mod)
+    add_muon_weight(weights, candidatelep, "id", year, mod)
+    add_muon_weight(weights, candidatelep, "iso", year, mod)
+    add_muonTriggerIso_weight(weights, candidatelep, year, mod)
