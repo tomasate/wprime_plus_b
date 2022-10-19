@@ -13,16 +13,26 @@ from dask.distributed import Client, PipInstall
 def main(args):
     loc_base = os.environ["PWD"]
 
+    # executor
+    if args.executor == "iterative":
+        executor = processor.iterative_executor
+    if args.executor == "dask":
+        executor = processor.dask_executor
+    if args.executor == "futures":
+        executor = processor.futures_executor
+        
     # executor arguments
     executor_args = {
         "schema": processor.NanoAODSchema,
     }
-
+    if args.executor == "futures":
+        executor_args.update({"workers": 10})
     if args.executor == "dask":
         client = Client(
             "tls://daniel-2eocampo-2ehenao-40cern-2ech.dask.cmsaf-prod.flatiron.hollandhpc.org:8786"
         )
         executor_args.update({"client": client})
+        
     # define processor
     if args.processor == "ttbar":
         from analysis.ttbar_processor import TTBarControlRegionProcessor
@@ -37,6 +47,7 @@ def main(args):
                 fileset[key] = ["root://xcache/" + file for file in val]
             else:
                 fileset[key] = ["root://xcache/" + file for file in val[: args.nfiles]]
+                
     # run processor
     out = processor.run_uproot_job(
         fileset,
@@ -47,11 +58,7 @@ def main(args):
             output_location=args.output_location,
             dir_name=args.dir_name,
         ),
-        executor=(
-            processor.iterative_executor
-            if args.executor == "iterative"
-            else processor.dask_executor
-        ),
+        executor=executor,
         executor_args=executor_args,
     )
 
