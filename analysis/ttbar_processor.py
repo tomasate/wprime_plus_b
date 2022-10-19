@@ -145,7 +145,7 @@ class TTBarControlRegionProcessor(processor.ProcessorABC):
         good_muons = (
             (events.Muon.pt > 30)
             & (np.abs(events.Muon.eta) < 2.4)
-            & events.Muon.mediumId
+            & events.Muon.tightId
         )
         n_good_muons = ak.sum(good_muons, axis=1)
 
