@@ -13,15 +13,27 @@ from dask.distributed import Client, PipInstall
 def main(args):
     loc_base = os.environ["PWD"]
 
-    # executor
-    if args.executor == "iterative":
-        executor = processor.iterative_executor
-    if args.executor == "dask":
-        executor = processor.dask_executor
-    if args.executor == "futures":
-        executor = processor.futures_executor
+    # load fileset
+    with open(f"{loc_base}/data/fileset/fileset_{args.year}_UL_NANO.json", "r") as f:
+        fileset = json.load(f)
+    for key, val in fileset.items():
+        if val is not None:
+            if args.nfiles == -1:
+                fileset[key] = ["root://xcache/" + file for file in val]
+            else:
+                fileset[key] = ["root://xcache/" + file for file in val[: args.nfiles]]
+                
+    # define processor
+    if args.processor == "ttbar":
+        from analysis.ttbar_processor import TTBarControlRegionProcessor
+        proc = TTBarControlRegionProcessor
         
-    # executor arguments
+    # executors and arguments
+    executors = {
+        "iterative": processor.iterative_executor,
+        "futures": processor.futures_executor,
+        "dask": processor.dask_executor,
+    }
     executor_args = {
         "schema": processor.NanoAODSchema,
     }
@@ -33,21 +45,6 @@ def main(args):
         )
         executor_args.update({"client": client})
         
-    # define processor
-    if args.processor == "ttbar":
-        from analysis.ttbar_processor import TTBarControlRegionProcessor
-        proc = TTBarControlRegionProcessor
-        
-    # load fileset
-    with open(f"{loc_base}/data/fileset/fileset_{args.year}_UL_NANO.json", "r") as f:
-        fileset = json.load(f)
-    for key, val in fileset.items():
-        if val is not None:
-            if args.nfiles == -1:
-                fileset[key] = ["root://xcache/" + file for file in val]
-            else:
-                fileset[key] = ["root://xcache/" + file for file in val[: args.nfiles]]
-                
     # run processor
     out = processor.run_uproot_job(
         fileset,
@@ -58,7 +55,7 @@ def main(args):
             output_location=args.output_location,
             dir_name=args.dir_name,
         ),
-        executor=executor,
+        executor=executors[args.executor],
         executor_args=executor_args,
     )
 
