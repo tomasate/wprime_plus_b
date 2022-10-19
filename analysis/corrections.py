@@ -38,9 +38,9 @@ def get_pog_json(json_name: str, year: str) -> str:
     Parameters:
     -----------
         json_name:
-            json name (muon, electron, pileup or btag)
+            json name {'muon', 'electron', 'pileup', 'btag'}
         year:
-            dataset year
+            dataset year {'2016', '2017', '2018'}
     """
     if json_name in POG_JSONS:
         pog_json = POG_JSONS[json_name]
@@ -61,9 +61,9 @@ def add_pileup_weight(weights: Type[Weights], year: str, mod: str, nPU: ak.Array
         weights:
             Weights object from coffea.analysis_tools
         year:
-            dataset year
+            dataset year {'2016', '2017', '2018'}
         mod:
-            year modifier ("" or "APV")
+            year modifier {"", "APV"}
         nPU:
             number of true interactions (events.Pileup.nPU)
     """
@@ -112,13 +112,13 @@ class BTagCorrector:
             sf:
                 scale factors to use (mujets or comb)
             wp:
-                worging point (L, M or T)
+                worging point {'L', 'M', 'T'}
             tagger:
-                tagger (deepJet or deepCSV)
+                tagger {'deepJet', 'deepCSV'}
             year:
-                dataset year
+                dataset year {'2016', '2017', '2018'}
             mod:
-                year modifier ("" or "APV")
+                year modifier {"", "APV"}
         """
         self._sf = sf
         self._year = year + mod
@@ -190,6 +190,7 @@ def add_electronID_weight(
     electron: ak.Array,
     year: str,
     mod: str = "",
+    wp: str = "wp80noiso",
 ):
     """
     add electron identification scale factor
@@ -201,9 +202,11 @@ def add_electronID_weight(
         electron:
             Electron collection
         year:
-            Year of the dataset
+            Year of the dataset {'2016', '2017', '2018'}
         mod:
-            Year modifier ('' or 'APV')
+            Year modifier {'', 'APV'}
+        wp:
+            Working point {'Loose', 'Medium', 'Tight', 'wp80iso', 'wp80noiso', 'wp90iso', 'wp90noiso'}
     """
     # correction set
     cset = correctionlib.CorrectionSet.from_file(
@@ -220,9 +223,6 @@ def add_electronID_weight(
 
     # remove _UL from year
     year = POG_YEARS[year + mod].replace("_UL", "")
-
-    # working point
-    wp = "wp80noiso"
 
     # scale factors
     values = {}
@@ -260,9 +260,9 @@ def add_electronReco_weight(
         electron:
             Electron collection
         year:
-            Year of the dataset
+            Year of the dataset {'2016', '2017', '2018'}
         mod:
-            Year modifier ('' or 'APV')
+            Year modifier {'', 'APV'}
     """
     # correction set
     cset = correctionlib.CorrectionSet.from_file(
@@ -319,9 +319,10 @@ def add_muon_weight(
     sf_type: str,
     year: str,
     mod: str = "",
+    wp: str = "tight",
 ):
     """
-    add muon ID (MediumPromptID) or Iso (LooseRelIso with mediumID) scale factors
+    add muon ID (TightID) or Iso (LooseRelIso with mediumID) scale factors
 
     Parameters:
     -----------
@@ -330,11 +331,13 @@ def add_muon_weight(
         muon:
             Muon collection
         sf_type:
-            Type of scale factor ('id', 'iso')
+            Type of scale factor {'id', 'iso'}
         year:
-            Year of the dataset
+            Year of the dataset {'2016', '2017', '2018'}
         mod:
-            Year modifier ('' or 'APV')
+            Year modifier {'', 'APV'}
+        wp:
+            Working point {'medium', 'tight'}
     """
     # correction set
     cset = correctionlib.CorrectionSet.from_file(
@@ -350,8 +353,12 @@ def add_muon_weight(
 
     # scale factors
     sfs_keys = {
-        "id": "NUM_MediumPromptID_DEN_TrackerMuons",
-        "iso": "NUM_LooseRelIso_DEN_MediumID",
+        "id": "NUM_TightID_DEN_TrackerMuons"
+        if wp == "tight"
+        else "NUM_MediumPromptID_DEN_TrackerMuons",
+        "iso": "NUM_LooseRelIso_DEN_TightIDandIPCut"
+        if wp == "tight"
+        else "NUM_LooseRelIso_DEN_MediumID",
     }
 
     values = {}
@@ -388,9 +395,9 @@ def add_muonTriggerIso_weight(
         muon:
             Muon collection
         year:
-            Year of the dataset
+            Year of the dataset {'2016', '2017', '2018'}
         mod:
-            Year modifier ('' or 'APV')
+            Year modifier {'', 'APV'}
     """
     # correction set
     cset = correctionlib.CorrectionSet.from_file(
@@ -445,9 +452,9 @@ def add_lepton_weights(
         candidatelep:
             Lepton candidate collection
         year:
-            Year of the dataset
+            Year of the dataset {'2016', '2017', '2018'}
         mod:
-            Year modifier ('' or 'APV')
+            Year modifier {'', 'APV'}
     """
     add_electronID_weight(weights, candidatelep, year, mod)
     add_electronReco_weight(weights, candidatelep, year, mod)
