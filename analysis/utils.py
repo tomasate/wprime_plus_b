@@ -81,7 +81,7 @@ def save_dfs_parquet(fname: str, dfs_dict: dict) -> None:
         pq.write_table(table, fname + ".parquet")
 
 
-def ak_to_pandas(output_collection: ak.Array) -> pd.DataFrame:
+def ak_to_pandas(output_collection: dict) -> pd.DataFrame:
     """
     cast awkward array into a pandas dataframe
     """
