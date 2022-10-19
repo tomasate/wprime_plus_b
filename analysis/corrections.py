@@ -137,11 +137,6 @@ class BTagCorrector:
             get_pog_json(json_name="btag", year=year + mod)
         )
 
-        # efficiency lookup
-        self.efflookup = util.load(
-            f"/home/cms-jovyan/wprime_plus_b/data/btageff_{self._tagger}_{self._wp}_{self._year}.coffea"
-        )
-
     def btag_SF(self, j, syst="central"):
         # syst: central, down, down_correlated, down_uncorrelated, up, up_correlated
         # until correctionlib handles jagged data natively we have to flatten and unflatten
@@ -169,22 +164,11 @@ class BTagCorrector:
         # bjets (hadron flavor definition: 5=b, 4=c, 0=udsg)
         bjets = jets[(jets.hadronFlavour > 0) & (abs(jets.eta) < 2.5)]
 
-        # b-tag efficiency
-        bEff = self.efflookup(bjets.hadronFlavour, bjets.pt, abs(bjets.eta))
-
         # b-tag nominal scale factors
         bSF = self.btag_SF(bjets, "central")
 
-        # mask for events passing the btag working point
-        bPass = bjets[self._branch] > self._btagwp
-
-        # tagged SF = SF*eff / eff = SF
-        tagged_sf = ak.prod(bSF[bPass], axis=-1)
-        # untagged SF = (1 - SF*eff) / (1 - eff)
-        untagged_sf = ak.prod(((1 - bSF * bEff) / (1 - bEff))[~bPass], axis=-1)
-
         # combine eff and SF as tagged SF * untagged SF
-        nominal_weight = ak.fill_none(tagged_sf * untagged_sf, 1.0)
+        nominal_weight = ak.prod(bSF, axis=-1)
 
         # add nominal weight
         weights.add(name="btagSF", weight=nominal_weight)
