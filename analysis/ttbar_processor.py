@@ -135,7 +135,7 @@ class TTBarControlRegionProcessor(processor.ProcessorABC):
                 (np.abs(events.Electron.eta) < 1.44)
                 | (np.abs(events.Electron.eta) > 1.57)
             )
-            & (events.Electron.mvaFall17V2noIso_WP90)
+            & (events.Electron.cutBased_HEEP)
         )
         n_good_electrons = ak.sum(good_electrons, axis=1)
 
