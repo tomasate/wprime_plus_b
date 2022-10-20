@@ -106,7 +106,7 @@ def save_output(
     with open("/home/cms-jovyan/wprime_plus_b/data/simplified_samples.json", "r") as f:
         simplified_samples = json.load(f)
     sample = simplified_samples[year][dataset]
-    partition_key = events.behavior["_events_factory_"]._partition_key.replace(
+    partition_key = events.behavior["__events_factory__"]._partition_key.replace(
         "/", "_"
     )
     date = datetime.today().strftime("%Y-%m-%d")

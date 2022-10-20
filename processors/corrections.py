@@ -96,7 +96,7 @@ def add_pileup_weight(weights: Type[Weights], year: str, mod: str, nPU: ak.Array
 # b-tagging scale factors
 # -----------------------------------
 class BTagCorrector:
-    def _init_(
+    def __init__(
         self,
         sf: str = "comb",
         wp: str = "M",
@@ -141,7 +141,7 @@ class BTagCorrector:
         # syst: central, down, down_correlated, down_uncorrelated, up, up_correlated
         # until correctionlib handles jagged data natively we have to flatten and unflatten
         j, nj = ak.flatten(j), ak.num(j)
-        sf = self.cset[f"{self._tagger}{self._sf}"].evaluate(
+        sf = self._cset[f"{self._tagger}_{self._sf}"].evaluate(
             syst,
             self._wp,
             np.array(j.hadronFlavour),
