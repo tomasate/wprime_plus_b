@@ -11,7 +11,7 @@ from .utils import normalize, pad_val, build_p4, ak_to_pandas, save_output
 
 
 class TTBarControlRegionProcessor(processor.ProcessorABC):
-    def __init__(
+    def _init_(
         self,
         year: str = "2017",
         yearmod: str = "",

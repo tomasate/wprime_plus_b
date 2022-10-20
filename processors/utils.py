@@ -106,18 +106,42 @@ def save_output(
     with open("/home/cms-jovyan/wprime_plus_b/data/simplified_samples.json", "r") as f:
         simplified_samples = json.load(f)
     sample = simplified_samples[year][dataset]
-    partition_key = events.behavior["__events_factory__"]._partition_key.replace(
+    partition_key = events.behavior["_events_factory_"]._partition_key.replace(
         "/", "_"
     )
     date = datetime.today().strftime("%Y-%m-%d")
 
     # creating directories for each channel and sample
-    if not os.path.exists(output_location + date + "/" + dir_name  + "/" + year + "/" + channel):
-        os.makedirs(output_location + date + "/" + dir_name  + "/" + year + "/" + channel)
     if not os.path.exists(
-        output_location + date + "/" + dir_name  + "/" + year + "/" + channel + "/" + sample
+        output_location + date + "/" + dir_name + "/" + year + "/" + channel
     ):
-        os.makedirs(output_location + date + "/" + dir_name  + "/" + year + "/" + channel + "/" + sample)
+        os.makedirs(
+            output_location + date + "/" + dir_name + "/" + year + "/" + channel
+        )
+    if not os.path.exists(
+        output_location
+        + date
+        + "/"
+        + dir_name
+        + "/"
+        + year
+        + "/"
+        + channel
+        + "/"
+        + sample
+    ):
+        os.makedirs(
+            output_location
+            + date
+            + "/"
+            + dir_name
+            + "/"
+            + year
+            + "/"
+            + channel
+            + "/"
+            + sample
+        )
     fname = (
         output_location
         + date

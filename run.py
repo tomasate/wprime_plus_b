@@ -7,7 +7,7 @@ import dask
 import importlib.resources
 from datetime import datetime
 from coffea import processor
-from dask.distributed import Client, PipInstall
+from dask.distributed import Client
 
 
 def main(args):
@@ -22,12 +22,11 @@ def main(args):
                 fileset[key] = ["root://xcache/" + file for file in val]
             else:
                 fileset[key] = ["root://xcache/" + file for file in val[: args.nfiles]]
-                
     # define processor
     if args.processor == "ttbar":
         from analysis.ttbar_processor import TTBarControlRegionProcessor
+
         proc = TTBarControlRegionProcessor
-        
     # executors and arguments
     executors = {
         "iterative": processor.iterative_executor,
@@ -44,7 +43,6 @@ def main(args):
             "tls://daniel-2eocampo-2ehenao-40cern-2ech.dask.cmsaf-prod.flatiron.hollandhpc.org:8786"
         )
         executor_args.update({"client": client})
-        
     # run processor
     out = processor.run_uproot_job(
         fileset,
@@ -63,13 +61,20 @@ def main(args):
     # save dictionary with cutflows
     date = datetime.today().strftime("%Y-%m-%d")
     with open(
-        args.output_location + date + "/" + args.processor + "/" + args.year + "/" + "out.pkl",
+        args.output_location
+        + date
+        + "/"
+        + args.processor
+        + "/"
+        + args.year
+        + "/"
+        + "out.pkl",
         "wb",
     ) as handle:
         pickle.dump(out, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 
-if __name__ == "__main__":
+if _name_ == "_main_":
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--channel",
