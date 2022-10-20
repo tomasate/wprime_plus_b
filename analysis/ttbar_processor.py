@@ -15,31 +15,36 @@ class TTBarControlRegionProcessor(processor.ProcessorABC):
         self,
         year: str = "2017",
         yearmod: str = "",
-        channels: List[str] = ["ele", "mu"],
-        output_location="./outfiles/",
-        dir_name: str = "control_region/",
+        channel: str = "ele",
+        output_location: str = "",
+        dir_name: str = "",
     ):
         self._year = year
         self._yearmod = yearmod
-        self._channels = channels
+        self._channel = channel
         self._output_location = output_location
         self._dir_name = dir_name
 
         # open triggers
         with open("/home/cms-jovyan/wprime_plus_b/data/triggers.json", "r") as f:
             self._triggers = json.load(f)[self._year]
+            
         # open btagDeepFlavB
         with open("/home/cms-jovyan/wprime_plus_b/data/btagDeepFlavB.json", "r") as f:
             self._btagDeepFlavB = json.load(f)[self._year]
+            
         # open met filters
         # https://twiki.cern.ch/twiki/bin/view/CMS/MissingETOptionalFiltersRun2
         with open(
             "/home/cms-jovyan/wprime_plus_b/data/metfilters.json", "rb"
         ) as handle:
             self._metfilters = json.load(handle)[self._year]
+            
         # open lumi masks
         with open("/home/cms-jovyan/wprime_plus_b/data/lumi_masks.pkl", "rb") as handle:
             self._lumi_mask = pickle.load(handle)
+        
+        # dataset names per year
         if year == "2018":
             self.dataset_per_ch = {
                 "ele": "EGamma",
@@ -50,29 +55,33 @@ class TTBarControlRegionProcessor(processor.ProcessorABC):
                 "ele": "SingleElectron",
                 "mu": "SingleMuon",
             }
+        
+        # lepton and common weights
+        self.lepton_weights = {
+            "ele": ["electronID_wp80noiso", "electronRecoAbove20"],
+            "mu": ["muonId", "muonIso", "muonTriggerIso"]
+        }
         self.common_weights = ["genweight", "L1Prefiring", "pileup", "btagSF"]
-        self.electron_weights = ["electronID_wp80noiso", "electronRecoAbove20"]
-        self.muon_weights = ["muonId", "muonIso", "muonTriggerIso"]
 
     def add_selection(
-        self, name: str, sel: ak.Array, channel: List[str] = None
+        self,
+        name: str,
+        sel: ak.Array,
     ) -> None:
         """
         Adds selection to PackedSelection object and the cutflow dictionary
 
         taken from: github.com/cmantill/boostedhiggs/blob/main/boostedhiggs/hwwprocessor.py
         """
-        channels = channel if channel else self._channels
-        for ch in channels:
-            self.selections[ch].add(name, sel)
-            selection_ch = self.selections[ch].all(*self.selections[ch].names)
-            if self.isMC:
-                weight = self.weights.partial_weight(
-                    self.weights_per_ch[ch] + self.common_weights
-                )
-                self.cutflows[ch][name] = float(weight[selection_ch].sum())
-            else:
-                self.cutflows[ch][name] = np.sum(selection_ch)
+        self.selections.add(name, sel)
+        selection = self.selections.all(*self.selections.names)
+        if self.isMC:
+            weight = self.weights.partial_weight(
+                self.lepton_weights[self._channel] + self.common_weights
+            )
+            self.cutflows[name] = float(weight[selection].sum())
+        else:
+            self.cutflows[name] = np.sum(selection)
 
     @property
     def accumulator(self):
@@ -84,31 +93,29 @@ class TTBarControlRegionProcessor(processor.ProcessorABC):
 
         self.isMC = hasattr(events, "genWeight")
         self.weights = Weights(nevents, storeIndividual=True)
-        self.weights_per_ch = {}
-        self.selections = {}
+        self.selections = PackedSelection()
         self.cutflows = {}
-        for ch in self._channels:
-            self.weights_per_ch[ch] = []
-            self.selections[ch] = PackedSelection()
-            self.cutflows[ch] = {}
+
         # luminosity
         if not self.isMC:
             lumi_mask = self._lumi_mask[self._year](events.run, events.luminosityBlock)
         else:
             lumi_mask = np.ones(len(events), dtype="bool")
+            
         # MET filters
         metfilters = np.ones(nevents, dtype="bool")
         metfilterkey = "mc" if self.isMC else "data"
         for mf in self._metfilters[metfilterkey]:
             if mf in events.Flag.fields:
                 metfilters = metfilters & events.Flag[mf]
+                
         # triggers
         trigger = {}
-        for ch in self._channels:
-            trigger[ch] = np.zeros(nevents, dtype="bool")
-            for t in self._triggers[ch]:
-                if t in events.HLT.fields:
-                    trigger[ch] = trigger[ch] | events.HLT[t]
+        trigger[self._channel] = np.zeros(nevents, dtype="bool")
+        for t in self._triggers[self._channel]:
+            if t in events.HLT.fields:
+                trigger[self._channel] = trigger[self._channel] | events.HLT[t]
+                
         # taus
         deep_tau_ele = (
             (events.Tau.idDeepTau2017v2p1VSjet > 8)
@@ -135,7 +142,11 @@ class TTBarControlRegionProcessor(processor.ProcessorABC):
                 (np.abs(events.Electron.eta) < 1.44)
                 | (np.abs(events.Electron.eta) > 1.57)
             )
-            & (events.Electron.cutBased_HEEP)
+            & (
+                events.Electron.cutBased_HEEP
+                if self._channel == "ele"
+                else events.Electron.cutBased_HEEP
+            )
         )
         n_good_electrons = ak.sum(good_electrons, axis=1)
 
@@ -145,16 +156,16 @@ class TTBarControlRegionProcessor(processor.ProcessorABC):
         good_muons = (
             (events.Muon.pt > 30)
             & (np.abs(events.Muon.eta) < 2.4)
-            & events.Muon.tightId
+            & (events.Muon.mediumId if self._channel == "ele" else events.Muon.tightId)
         )
         n_good_muons = ak.sum(good_muons, axis=1)
 
         # get candidate lepton
-        goodleptons = ak.concatenate(
-            [events.Muon[good_muons], events.Electron[good_electrons]], axis=1
-        )
-        goodleptons = goodleptons[ak.argsort(goodleptons.pt, ascending=False)]
-        candidatelep = ak.firsts(goodleptons)
+        if self._channel == "ele":
+            candidatelep = events.Electron[good_electrons]
+        if self._channel == "mu":
+            candidatelep = events.Muon[good_muons]
+        candidatelep = ak.firsts(candidatelep)
         candidatelep_p4 = build_p4(candidatelep)
 
         # reliso for candidate lepton
@@ -206,8 +217,7 @@ class TTBarControlRegionProcessor(processor.ProcessorABC):
                 "jet_eta": candidatebjet.eta,
                 "jet_phi": candidatebjet.phi,
             },
-            "ele": {},
-            "mu": {},
+            self._channel: {},
         }
 
         # weights
@@ -243,6 +253,7 @@ class TTBarControlRegionProcessor(processor.ProcessorABC):
                 candidatelep=candidatelep,
                 year=self._year,
                 mod=self._yearmod,
+                channel=self._channel,
             )
             # store common weights
             for weight in self.common_weights:
@@ -252,79 +263,62 @@ class TTBarControlRegionProcessor(processor.ProcessorABC):
             variables["common"]["common_weight"] = self.weights.partial_weight(
                 self.common_weights
             )
-            # store electron weights
-            for weight in self.electron_weights:
-                variables["ele"][f"{weight}_weight"] = self.weights.partial_weight(
-                    [weight]
-                )
-            variables["ele"]["electron_weigth"] = self.weights.partial_weight(
-                self.electron_weights
-            )
-            # store muon weights
-            for weight in self.muon_weights:
-                variables["mu"][f"{weight}_weight"] = self.weights.partial_weight(
-                    [weight]
-                )
-            variables["mu"]["muon_weigth"] = self.weights.partial_weight(
-                self.muon_weights
+            # store lepton weights
+            for weight in self.lepton_weights[self._channel]:
+                variables[self._channel][
+                    f"{weight}_weight"
+                ] = self.weights.partial_weight([weight])
+            variables[self._channel]["lepton_weigth"] = self.weights.partial_weight(
+                self.lepton_weights[self._channel]
             )
         # selections
-        self.add_selection("trigger", trigger["mu"], ["mu"])
-        self.add_selection("trigger", trigger["ele"], ["ele"])
+        one_lepton = {
+            "ele": (n_good_muons == 0) & (n_good_electrons == 1),
+            "mu": (n_good_muons == 1) & (n_good_electrons == 0),
+        }
+        self.add_selection("trigger", trigger[self._channel])
         self.add_selection("lumi", lumi_mask)
         self.add_selection("metfilters", metfilters)
         self.add_selection("two_bjets", n_good_bjets >= 2)
-        self.add_selection(
-            "one_lepton", ((n_good_muons == 1) & (n_good_electrons == 0)), ["mu"]
-        )
-        self.add_selection(
-            "one_lepton", ((n_good_muons == 0) & (n_good_electrons == 1)), ["ele"]
-        )
+        self.add_selection("one_lepton", one_lepton[self._channel])
         self.add_selection("deltaR", lep_bjet_dr > 0.4)
-        self.add_selection("notaus", n_deep_tau_mu == 0, ["mu"])
-        self.add_selection("notaus", n_deep_tau_ele == 0, ["ele"])
+        self.add_selection("notaus", n_deep_tau_ele == 0)
 
         # output parquets
         output = {}
-        for ch in self._channels:
-            fill_output = True
-            # for data, only fill output for the dataset needed
-            if not self.isMC and self.dataset_per_ch[ch] not in dataset:
-                fill_output = False
-            selection_ch = self.selections[ch].all(*self.selections[ch].names)
-
-            # only fill output for that channel if the selections yield any events
-            if np.sum(selection_ch) <= 0:
-                fill_output = False
-            if fill_output:
-                keys = ["common", "ele", "mu"]
-                if ch == "ele" or ch == "mu":
-                    keys += ["lep"]
-                out = {}
-                for key in keys:
-                    for var, item in variables[key].items():
-                        # pad all the variables that are not a cut with -1
-                        pad_item = (
-                            item
-                            if ("cut" in var or "weight" in var)
-                            else pad_val(item, -1)
-                        )
-                        # fill out dictionary
-                        out[var] = item
-                # fill the output dictionary after selections
-                output[ch] = {key: value[selection_ch] for (key, value) in out.items()}
-            else:
-                output[ch] = {}
-            # convert arrays to pandas
-            if not isinstance(output[ch], pd.DataFrame):
-                output[ch] = ak_to_pandas(output[ch])
+        fill_output = True
+        # for data, only fill output for the dataset needed
+        if not self.isMC and self.dataset_per_ch[self._channel] not in dataset:
+            fill_output = False
+        selection = self.selections.all(*self.selections.names)
+        # only fill output for that channel if the selections yield any events
+        if np.sum(selection) <= 0:
+            fill_output = False
+        if fill_output:
+            out = {}
+            for key in variables:
+                for var, item in variables[key].items():
+                    # pad all the variables that are not a cut with -1
+                    pad_item = (
+                        item if ("cut" in var or "weight" in var) else pad_val(item, -1)
+                    )
+                    # fill out dictionary
+                    out[var] = item
+            # fill the output dictionary after selections
+            output = {key: value[selection] for (key, value) in out.items()}
+        else:
+            output = {}
+        # convert arrays to pandas
+        if not isinstance(output, pd.DataFrame):
+            output = ak_to_pandas(output)
+            
         # now save pandas dataframe
         save_output(
             events,
             dataset,
             output,
             self._year,
-            self._channels,
+            self._channel,
             self._output_location,
             self._dir_name,
         )
