@@ -52,8 +52,9 @@ def main(args):
         processor_instance=proc(
             year=args.year,
             yearmod=args.yearmod,
+            channel=args.channel,
             output_location=args.output_location,
-            dir_name=args.dir_name,
+            dir_name=args.processor,
         ),
         executor=executors[args.executor],
         executor_args=executor_args,
@@ -62,7 +63,7 @@ def main(args):
     # save dictionary with cutflows
     date = datetime.today().strftime("%Y-%m-%d")
     with open(
-        args.output_location + args.dir_name + date + "/" + args.year + "/" + "out.pkl",
+        args.output_location + date + "/" + args.processor + "/" + args.year + "/" + "out.pkl",
         "wb",
     ) as handle:
         pickle.dump(out, handle, protocol=pickle.HIGHEST_PROTOCOL)
@@ -70,6 +71,13 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--channel",
+        dest="channel",
+        type=str,
+        default="ele",
+        help="lepton channel",
+    )
     parser.add_argument(
         "--processor",
         dest="processor",
@@ -101,13 +109,6 @@ if __name__ == "__main__":
         type=str,
         default="/home/cms-jovyan/wprime_plus_b/outfiles/",
         help="output location",
-    )
-    parser.add_argument(
-        "--dir_name",
-        dest="dir_name",
-        type=str,
-        default="control_region/",
-        help="output directory name",
     )
 
     args = parser.parse_args()
