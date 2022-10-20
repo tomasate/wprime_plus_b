@@ -94,9 +94,9 @@ def ak_to_pandas(output_collection: dict) -> pd.DataFrame:
 def save_output(
     events: ak.Array,
     dataset: str,
-    output: dict,
+    output: pd.DataFrame,
     year: str,
-    channels: List[str],
+    channel: str,
     output_location: str,
     dir_name: str,
 ) -> None:
@@ -112,24 +112,24 @@ def save_output(
     date = datetime.today().strftime("%Y-%m-%d")
 
     # creating directories for each channel and sample
-    for ch in channels:
-        if not os.path.exists(output_location + dir_name + date + "/" + "/" + year + "/" + ch):
-            os.makedirs(output_location + dir_name + date + "/" + year + "/" + ch)
-        if not os.path.exists(
-            output_location + dir_name + date + "/" + year + "/" + ch + "/" + sample
-        ):
-            os.makedirs(output_location + dir_name + date + "/" + year + "/" + ch + "/" + sample)
-        fname = (
-            output_location
-            + dir_name
-            + date
-            + "/"
-            + year
-            + "/"
-            + ch
-            + "/"
-            + sample
-            + "/"
-            + partition_key
-        )
-        save_dfs_parquet(fname, output[ch])
+    if not os.path.exists(output_location + date + "/" + dir_name  + "/" + year + "/" + channel):
+        os.makedirs(output_location + date + "/" + dir_name  + "/" + year + "/" + channel)
+    if not os.path.exists(
+        output_location + date + "/" + dir_name  + "/" + year + "/" + channel + "/" + sample
+    ):
+        os.makedirs(output_location + date + "/" + dir_name  + "/" + year + "/" + channel + "/" + sample)
+    fname = (
+        output_location
+        + date
+        + "/"
+        + dir_name
+        + "/"
+        + year
+        + "/"
+        + channel
+        + "/"
+        + sample
+        + "/"
+        + partition_key
+    )
+    save_dfs_parquet(fname, output)
