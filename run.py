@@ -8,7 +8,7 @@ import importlib.resources
 from datetime import datetime
 from coffea import processor
 from dask.distributed import Client
-
+from distributed.diagnostics.plugin import UploadDirectory
 
 def main(args):
     loc_base = os.environ["PWD"]
@@ -22,11 +22,12 @@ def main(args):
                 fileset[key] = ["root://xcache/" + file for file in val]
             else:
                 fileset[key] = ["root://xcache/" + file for file in val[: args.nfiles]]
+                
     # define processor
     if args.processor == "ttbar":
         from analysis.ttbar_processor import TTBarControlRegionProcessor
-
         proc = TTBarControlRegionProcessor
+        
     # executors and arguments
     executors = {
         "iterative": processor.iterative_executor,
@@ -36,13 +37,25 @@ def main(args):
     executor_args = {
         "schema": processor.NanoAODSchema,
     }
+    
     if args.executor == "futures":
-        executor_args.update({"workers": 10})
+        executor_args.update({"workers": 4})
+        
     if args.executor == "dask":
         client = Client(
             "tls://daniel-2eocampo-2ehenao-40cern-2ech.dask.cmsaf-prod.flatiron.hollandhpc.org:8786"
         )
+        try:
+            client.register_worker_plugin(
+                UploadDirectory(
+                    f"{loc_base}/wprime_plus_b", restart=True, update_path=True
+                ),
+                nanny=True,
+            )
+        except OSError:
+            print("Failed to upload the directory")
         executor_args.update({"client": client})
+        
     # run processor
     out = processor.run_uproot_job(
         fileset,
@@ -74,7 +87,7 @@ def main(args):
         pickle.dump(out, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 
-if _name_ == "_main_":
+if name == "main":
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--channel",
