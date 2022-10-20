@@ -25,7 +25,7 @@ def main(args):
                 
     # define processor
     if args.processor == "ttbar":
-        from analysis.ttbar_processor import TTBarControlRegionProcessor
+        from processors.ttbar_processor import TTBarControlRegionProcessor
         proc = TTBarControlRegionProcessor
         
     # executors and arguments
