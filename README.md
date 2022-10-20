@@ -6,12 +6,12 @@ Python package for analyzing W' + b in the electron and muon channels. The analy
 
 ## Processors
 
-- [ttbar_processor](analysis/ttbar_processor.py): TTbar Control Region processor that applies pre-selection and selection cuts (two bjets + one lepton + MET), and saves unbinned branches as parquet files.
+- [TTBarControlRegionProcessor](processors/ttbar_processor.py): TTbar Control Region processor that applies pre-selection and selection cuts (two bjets + one lepton + MET), and saves unbinned branches as parquet files.
 
 To test locally first (recommended), can do e.g.:
 
 ```bash
-python run.py --executor iterative --year 2017 --processor ttbar --nfiles 1 
+python run.py --channel ele --executor iterative --year 2017 --processor ttbar --nfiles 1 
 ```
 
 General note: [coffea-casa](https://coffea-casa.readthedocs.io/en/latest/cc_user.html) is faster and more convenient, however still somewhat experimental so for large of inputs and/or processors which may require heavier cpu/memory Condor is recommended.
@@ -19,17 +19,16 @@ General note: [coffea-casa](https://coffea-casa.readthedocs.io/en/latest/cc_user
 
 ## Scale factors
 
-We use the common json format for scale factors (SF), hence the requirement to install [correctionlib](https://github.com/cms-nanoAOD/correctionlib). The SF themselves can be found in the central [POG repository](https://gitlab.cern.ch/cms-nanoAOD/jsonpog-integration), synced once a day with CVMFS: `/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration`. A summary of their content can be found [here](https://cms-nanoaod-integration.web.cern.ch/commonJSONSFs/). The SF used in this analysis are:
+We use the common json format for scale factors (SF), hence the requirement to install [correctionlib](https://github.com/cms-nanoAOD/correctionlib). The SF themselves can be found in the central [POG repository](https://gitlab.cern.ch/cms-nanoAOD/jsonpog-integration), synced once a day with CVMFS: `/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration`. A summary of their content can be found [here](https://cms-nanoaod-integration.web.cern.ch/commonJSONSFs/). The SF used in this analysis are (See [corrections](processors/corrections.py)):
 
 * Pileup
-* [b-tagging](analysis/notebooks/btag_corrections.ipynb)
+* [b-tagging](notebooks/btag_corrections.ipynb)
 * Electron ID
 * Electron Reconstruction
 * Muon ID
 * Muon Iso
 * Muon TriggerIso
-  
-These SF are implemented as weights (See [corrections](analysis/corrections.py))
+ 
 
 ## Setting up coffea environments
 
