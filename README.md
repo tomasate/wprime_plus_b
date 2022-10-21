@@ -8,7 +8,7 @@ Python package for analyzing W' + b in the electron and muon channels. The analy
 
 - [TriggerEfficiencyProcessor](processors/trigger_efficiency_processor.py) (trigger): Trigger efficiency processor that applies pre-selection and selection cuts (two bjets + one lepton + MET), and saves numerator and denominator as hist objects in a pickle file. 
 
-- [TTBarControlRegionProcessor](processors/ttbar_processor.py) (ttbar): TTbar Control Region processor that applies pre-selection and selection cuts (two bjets + one lepton + MET), saves unbinned branches as parquet files and cutflow dictionaries as a pickle file in the format.
+- [TTBarControlRegionProcessor](processors/ttbar_processor.py) (ttbar): TTbar Control Region processor that applies pre-selection and selection cuts (two bjets + one lepton + MET), saves unbinned branches as parquet files and cutflow dictionaries as a pickle file.
 
 To test locally first (recommended), can do e.g.:
 
