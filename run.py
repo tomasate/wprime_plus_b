@@ -14,15 +14,22 @@ def main(args):
     loc_base = os.environ["PWD"]
 
     # load fileset
+    with open(f"{loc_base}/data/simplified_samples.json", "r") as f:
+        simplified_samples = json.load(f)[args.year]
+        simplified_samples = {v: k for k, v in simplified_samples.items()}
+    
     with open(f"{loc_base}/data/fileset/fileset_{args.year}_UL_NANO.json", "r") as f:
-        fileset = json.load(f)
-    for key, val in fileset.items():
-        if val is not None:
-            if args.nfiles == -1:
-                fileset[key] = ["root://xcache/" + file for file in val]
-            else:
-                fileset[key] = ["root://xcache/" + file for file in val[: args.nfiles]]
-                
+        data = json.load(f)
+        
+    for key, val in data.items():
+        if simplified_samples[args.sample] in key: 
+            fileset = {key: val}
+            if val is not None:
+                if args.nfiles == -1:
+                    fileset[key] = ["root://xcache/" + file for file in val]
+                else:
+                    fileset[key] = ["root://xcache/" + file for file in val[: args.nfiles]]
+
     # define processor
     if args.processor == "ttbar":
         from processors.ttbar_processor import TTBarControlRegionProcessor
@@ -43,7 +50,7 @@ def main(args):
     }
     
     if args.executor == "futures":
-        executor_args.update({"workers": 4})
+        executor_args.update({"workers": args.workers})
         
     if args.executor == "dask":
         client = Client(
@@ -93,7 +100,7 @@ def main(args):
         + "/"
         + args.channel
         + "/"
-        + "out.pkl",
+        + f"{args.sample}_out.pkl",
         "wb",
     ) as handle:
         pickle.dump(out, handle, protocol=pickle.HIGHEST_PROTOCOL)
@@ -101,6 +108,20 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--sample",
+        dest="sample",
+        type=str,
+        default="TTTo2L2Nu",
+        help="sample to process",
+    )
+    parser.add_argument(
+        "--workers",
+        dest="workers",
+        type=int,
+        default=4,
+        help="number of workers (futures executor)",
+    )
     parser.add_argument(
         "--channel",
         dest="channel",
@@ -113,7 +134,7 @@ if __name__ == "__main__":
         dest="processor",
         type=str,
         default="ttbar",
-        help="processor to run",
+        help="processor to run {trigger, ttbar}",
     )
     parser.add_argument(
         "--executor",
