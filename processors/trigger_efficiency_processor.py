@@ -128,16 +128,16 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
 
         # electrons
         good_electrons = (
-            (events.Electron.pt > 30)
+            (events.Electron.pt >= 30)
             & (np.abs(events.Electron.eta) < 2.4)
             & (
                 (np.abs(events.Electron.eta) < 1.44)
                 | (np.abs(events.Electron.eta) > 1.57)
             )
             & (
-                events.Electron.cutBased_HEEP
+                events.Electron.mvaFall17V2Iso_WP80
                 if self._channel == "ele"
-                else events.Electron.cutBased_HEEP
+                else events.Electron.mvaFall17V2Iso_WP90
             )
         )
         n_good_electrons = ak.sum(good_electrons, axis=1)
@@ -146,7 +146,7 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
         # mediumId OR tightId?
         # DO WE NEED LOOSE MUONS?
         good_muons = (
-            (events.Muon.pt > 30)
+            (events.Muon.pt >= 30)
             & (np.abs(events.Muon.eta) < 2.4)
             & (events.Muon.mediumId if self._channel == "ele" else events.Muon.tightId)
         )
@@ -171,10 +171,11 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
 
         # b-jets
         good_bjets = (
-            (events.Jet.pt > 30)
+            (events.Jet.pt >= 20)
             & (events.Jet.jetId == 6)
             & (events.Jet.puId == 7)
             & (events.Jet.btagDeepFlavB > self._btagDeepFlavB)
+            & (np.abs(events.Jet.eta) < 2.4)
         )
         n_good_bjets = ak.sum(good_bjets, axis=1)
         candidatebjet = ak.firsts(events.Jet[good_bjets])
