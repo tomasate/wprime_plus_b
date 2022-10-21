@@ -29,22 +29,22 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
         # open triggers
         with open("/home/cms-jovyan/wprime_plus_b/data/triggers.json", "r") as f:
             self._triggers = json.load(f)[self._year]
-            
+
         # open btagDeepFlavB
         with open("/home/cms-jovyan/wprime_plus_b/data/btagDeepFlavB.json", "r") as f:
             self._btagDeepFlavB = json.load(f)[self._year]
-            
+
         # open met filters
         # https://twiki.cern.ch/twiki/bin/view/CMS/MissingETOptionalFiltersRun2
         with open(
             "/home/cms-jovyan/wprime_plus_b/data/metfilters.json", "rb"
         ) as handle:
             self._metfilters = json.load(handle)[self._year]
-            
+
         # open lumi masks
         with open("/home/cms-jovyan/wprime_plus_b/data/lumi_masks.pkl", "rb") as handle:
             self._lumi_mask = pickle.load(handle)
-        
+
         # dataset names per year
         if year == "2018":
             self.dataset_per_ch = {
@@ -56,28 +56,25 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
                 "ele": "SingleElectron",
                 "mu": "SingleMuon",
             }
-        
-        # lepton and common weights
-        self.lepton_weights = {
-            "ele": ["electronID_wp80noiso", "electronRecoAbove20"],
-            "mu": ["muonId", "muonIso", "muonTriggerIso"]
-        }
-        self.common_weights = ["genweight", "L1Prefiring", "pileup", "btagSF"]
-        
+
         self.make_output = lambda: {
             "sumw": 0,
             "lepton_kin": hist2.Hist(
                 hist2.axis.StrCategory([], name="region", growth=True),
-                hist2.axis.Regular(40, 10, 800, name='lep_pt', label=r'lep $p_T$ [GeV]'),
+                hist2.axis.Regular(
+                    40, 10, 800, name="lep_pt", label=r"lep $p_T$ [GeV]"
+                ),
                 hist2.axis.Regular(25, 0, 1, name="lep_miniIso", label="lep miniIso"),
                 hist2.axis.Regular(25, 0, 1, name="lep_relIso", label="lep RelIso"),
-                hist2.axis.Regular(50, -2.4, 2.4, name='lep_eta', label="lep $\eta$"),
-                hist2.storage.Weight()
+                hist2.axis.Regular(50, -2.4, 2.4, name="lep_eta", label="lep $\eta$"),
+                hist2.storage.Weight(),
             ),
             "jet_kin": hist2.Hist(
                 hist2.axis.StrCategory([], name="region", growth=True),
-                hist2.axis.Regular(30, 200, 1000, name='jet_pt', label=r'bJet $p_T$ [GeV]'),
-                hist2.axis.Regular(50, -2.4, 2.4, name='jet_eta', label="bJet $\eta$"),
+                hist2.axis.Regular(
+                    30, 200, 1000, name="jet_pt", label=r"bJet $p_T$ [GeV]"
+                ),
+                hist2.axis.Regular(50, -2.4, 2.4, name="jet_eta", label="bJet $\eta$"),
                 hist2.storage.Weight(),
             ),
             "met_kin": hist2.Hist(
@@ -87,12 +84,15 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
             ),
             "mix_kin": hist2.Hist(
                 hist2.axis.StrCategory([], name="region", growth=True),
-                hist2.axis.Regular(40, 10, 800, name='lep_met_mt', label=r'$M_T$(lep, bJet) [GeV]'),
-                hist2.axis.Regular(30, 0, 5, name="lep_bjet_dr", label="$\Delta R$(lep, bJet)"),
+                hist2.axis.Regular(
+                    40, 10, 800, name="lep_met_mt", label=r"$M_T$(lep, bJet) [GeV]"
+                ),
+                hist2.axis.Regular(
+                    30, 0, 5, name="lep_bjet_dr", label="$\Delta R$(lep, bJet)"
+                ),
                 hist2.storage.Weight(),
-            )
+            ),
         }
-
 
     @property
     def accumulator(self):
@@ -101,23 +101,23 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
     def process(self, events):
         dataset = events.metadata["dataset"]
         nevents = len(events)
-        
+
         output = self.make_output()
         self.isMC = hasattr(events, "genWeight")
-            
+
         # luminosity
         if not self.isMC:
             lumi_mask = self._lumi_mask[self._year](events.run, events.luminosityBlock)
         else:
             lumi_mask = np.ones(len(events), dtype="bool")
-            
+
         # MET filters
         metfilters = np.ones(nevents, dtype="bool")
         metfilterkey = "mc" if self.isMC else "data"
         for mf in self._metfilters[metfilterkey]:
             if mf in events.Flag.fields:
                 metfilters = metfilters & events.Flag[mf]
-                
+
         # triggers
         trigger = {}
         for ch in ["ele", "mu"]:
@@ -125,24 +125,6 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
             for t in self._triggers[ch]:
                 if t in events.HLT.fields:
                     trigger[ch] = trigger[ch] | events.HLT[t]
-        
-        # taus
-        deep_tau_ele = (
-            (events.Tau.idDeepTau2017v2p1VSjet > 8)
-            & (events.Tau.idDeepTau2017v2p1VSe > 1)
-            & (np.abs(events.Tau.eta) < 2.3)
-            & (events.Tau.pt > 20)
-            & (events.Tau.dz < 0.2)
-        )
-        deep_tau_mu = (
-            (events.Tau.idDeepTau2017v2p1VSjet > 8)
-            & (events.Tau.idDeepTau2017v2p1VSmu > 1)
-            & (np.abs(events.Tau.eta) < 2.3)
-            & (events.Tau.pt > 20)
-            & (events.Tau.dz < 0.2)
-        )
-        n_deep_tau_ele = ak.sum(deep_tau_ele, axis=1)
-        n_deep_tau_mu = ak.sum(deep_tau_mu, axis=1)
 
         # electrons
         good_electrons = (
@@ -215,8 +197,8 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
         weights = Weights(nevents, storeIndividual=True)
         if self.isMC:
             # genweight
-            output['sumw'] = ak.sum(events.genWeight)
-            weights .add("genweight", events.genWeight)
+            output["sumw"] = ak.sum(events.genWeight)
+            weights.add("genweight", events.genWeight)
             # L1prefiring
             if self._year in ("2016", "2017"):
                 weights.add(
@@ -236,9 +218,7 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
             self._btagSF = BTagCorrector(
                 wp="M", tagger="deepJet", year=self._year, mod=self._yearmod
             )
-            self._btagSF.add_btag_weight(
-                jets=events.Jet[good_bjets], weights=weights 
-            )
+            self._btagSF.add_btag_weight(jets=events.Jet[good_bjets], weights=weights)
             # lepton weights
             add_lepton_weights(
                 weights=weights,
@@ -247,7 +227,7 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
                 mod=self._yearmod,
                 channel=self._channel,
             )
-            
+
         # selections
         selection = PackedSelection()
         one_lepton = {
@@ -264,49 +244,75 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
         # regions
         regions = {
             "ele": {
-                "numerator": ["lumi", "metfilters", "two_bjets", "one_lepton", "trigger_ele", "trigger_mu"],
-                "denominator": ["lumi", "metfilters", "two_bjets", "one_lepton", "trigger_mu"],
+                "numerator": [
+                    "lumi",
+                    "metfilters",
+                    "two_bjets",
+                    "one_lepton",
+                    "trigger_ele",
+                    "trigger_mu",
+                ],
+                "denominator": [
+                    "lumi",
+                    "metfilters",
+                    "two_bjets",
+                    "one_lepton",
+                    "trigger_mu",
+                ],
             },
             "mu": {
-                "numerator": ["lumi", "metfilters", "two_bjets", "one_lepton", "trigger_ele", "trigger_mu"],
-                "denominator": ["lumi", "metfilters", "two_bjets", "one_lepton", "trigger_ele"]
-            }
+                "numerator": [
+                    "lumi",
+                    "metfilters",
+                    "two_bjets",
+                    "one_lepton",
+                    "trigger_ele",
+                    "trigger_mu",
+                ],
+                "denominator": [
+                    "lumi",
+                    "metfilters",
+                    "two_bjets",
+                    "one_lepton",
+                    "trigger_ele",
+                ],
+            },
         }
 
         def fill(region: str):
             selections = regions[self._channel][region]
             cut = selection.all(*selections)
-            
-            output['lepton_kin'].fill(
-                region = region,
-                lep_pt = normalize(candidatelep.pt, cut),
-                lep_miniIso = normalize(lep_miso, cut),
-                lep_relIso = normalize(lep_reliso, cut),
-                lep_eta = normalize(candidatelep.eta, cut),
-                weight = weights.weight()[cut],
+
+            output["lepton_kin"].fill(
+                region=region,
+                lep_pt=normalize(candidatelep.pt, cut),
+                lep_miniIso=normalize(lep_miso, cut),
+                lep_relIso=normalize(lep_reliso, cut),
+                lep_eta=normalize(candidatelep.eta, cut),
+                weight=weights.weight()[cut],
             )
-            output['jet_kin'].fill(
-                region = region,
-                jet_pt = normalize(candidatebjet.pt, cut),
-                jet_eta = normalize(candidatebjet.eta, cut),
-                weight = weights.weight()[cut],
+            output["jet_kin"].fill(
+                region=region,
+                jet_pt=normalize(candidatebjet.pt, cut),
+                jet_eta=normalize(candidatebjet.eta, cut),
+                weight=weights.weight()[cut],
             )
-            output['met_kin'].fill(
-                region = region,
-                met = normalize(met.pt, cut),
-                weight = weights.weight()[cut],
+            output["met_kin"].fill(
+                region=region,
+                met=normalize(met.pt, cut),
+                weight=weights.weight()[cut],
             )
-            output['mix_kin'].fill(
-                region = region,
-                lep_met_mt = normalize(mt_lep_met, cut),
-                lep_bjet_dr = normalize(lep_bjet_dr, cut),
-                weight = weights.weight()[cut],
+            output["mix_kin"].fill(
+                region=region,
+                lep_met_mt=normalize(mt_lep_met, cut),
+                lep_bjet_dr=normalize(lep_bjet_dr, cut),
+                weight=weights.weight()[cut],
             )
-        
+
         for region in regions[self._channel]:
             fill(region)
-            
+
         return {dataset: output}
-    
+
     def postprocess(self, accumulator):
         return accumulator
