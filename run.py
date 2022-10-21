@@ -28,6 +28,10 @@ def main(args):
         from processors.ttbar_processor import TTBarControlRegionProcessor
         proc = TTBarControlRegionProcessor
         
+    if args.processor == "trigger":
+        from processors.trigger_efficiency import TriggerEfficiencyProcessor
+        proc = TriggerEfficiencyProcessor
+        
     # executors and arguments
     executors = {
         "iterative": processor.iterative_executor,
@@ -73,6 +77,12 @@ def main(args):
 
     # save dictionary with cutflows
     date = datetime.today().strftime("%Y-%m-%d")
+    if not os.path.exists(
+        args.output_location + date + "/" + args.processor + "/" + args.year + "/" + args.channel
+    ):
+        os.makedirs(
+            args.output_location + date + "/" + args.processor + "/" + args.year + "/" + args.channel
+        )
     with open(
         args.output_location
         + date
@@ -80,6 +90,8 @@ def main(args):
         + args.processor
         + "/"
         + args.year
+        + "/"
+        + args.channel
         + "/"
         + "out.pkl",
         "wb",
