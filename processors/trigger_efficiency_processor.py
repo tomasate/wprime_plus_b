@@ -61,8 +61,10 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
             "sumw": 0,
             "lepton_kin": hist2.Hist(
                 hist2.axis.StrCategory([], name="region", growth=True),
-                hist2.axis.Regular(
-                    40, 10, 800, name="lep_pt", label=r"lep $p_T$ [GeV]"
+                hist2.axis.Variable(
+                    [30, 60, 90, 120, 150, 180, 210, 240, 300, 500],
+                    name="lep_pt",
+                    label=r"lep $p_T$ [GeV]",
                 ),
                 hist2.axis.Regular(25, 0, 1, name="lep_miniIso", label="lep miniIso"),
                 hist2.axis.Regular(25, 0, 1, name="lep_relIso", label="lep RelIso"),
@@ -79,7 +81,11 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
             ),
             "met_kin": hist2.Hist(
                 hist2.axis.StrCategory([], name="region", growth=True),
-                hist2.axis.Regular(30, 0, 500, name="met", label=r"$p_T^{miss}$ [GeV]"),
+                hist2.axis.Variable(
+                    [50, 75, 100, 125, 150, 175, 200, 300, 500],
+                    name="met",
+                    label=r"$p_T^{miss}$ [GeV]",
+                ),
                 hist2.storage.Weight(),
             ),
             "mix_kin": hist2.Hist(
@@ -239,7 +245,7 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
         selection.add("trigger_mu", trigger["mu"])
         selection.add("lumi", lumi_mask)
         selection.add("metfilters", metfilters)
-        selection.add("two_bjets", n_good_bjets >= 2)
+        selection.add("two_bjets", n_good_bjets == 2)
         selection.add("one_lepton", one_lepton[self._channel])
 
         # regions
