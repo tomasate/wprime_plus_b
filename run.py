@@ -29,7 +29,7 @@ def main(args):
         proc = TTBarControlRegionProcessor
         
     if args.processor == "trigger":
-        from processors.trigger_efficiency import TriggerEfficiencyProcessor
+        from processors.trigger_efficiency_processor import TriggerEfficiencyProcessor
         proc = TriggerEfficiencyProcessor
         
     # executors and arguments
