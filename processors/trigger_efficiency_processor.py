@@ -73,8 +73,10 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
             ),
             "jet_kin": hist2.Hist(
                 hist2.axis.StrCategory([], name="region", growth=True),
-                hist2.axis.Regular(
-                    30, 200, 1000, name="jet_pt", label=r"bJet $p_T$ [GeV]"
+                hist2.axis.Variable(
+                    [30, 60, 90, 120, 150, 180, 210, 240, 300, 500], 
+                    name="jet_pt", 
+                    label=r"bJet $p_T$ [GeV]"
                 ),
                 hist2.axis.Regular(50, -2.4, 2.4, name="jet_eta", label="bJet $\eta$"),
                 hist2.storage.Weight(),
