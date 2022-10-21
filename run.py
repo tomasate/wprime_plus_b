@@ -106,7 +106,7 @@ if __name__ == "__main__":
         dest="channel",
         type=str,
         default="ele",
-        help="lepton channel",
+        help="lepton channel {ele, mu}",
     )
     parser.add_argument(
         "--processor",
@@ -120,14 +120,14 @@ if __name__ == "__main__":
         dest="executor",
         type=str,
         default="iterative",
-        help="executor (iterative or dask)",
+        help="executor {iterative, futures, dask}",
     )
     parser.add_argument(
         "--nfiles",
         dest="nfiles",
         type=int,
         default=1,
-        help="number of files per sample (all: -1)",
+        help="number of files per sample (all files: -1)",
     )
     parser.add_argument("--year", dest="year", type=str, default="2017", help="year")
     parser.add_argument(
