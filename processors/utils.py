@@ -25,7 +25,7 @@ def normalize(var: ak.Array, cut: ak.Array = None) -> ak.Array:
         ar = ak.to_numpy(ak.fill_none(var, np.nan))
         return ar
     else:
-        ar = ak.to_numpy(ak.fill_none(val[cut], np.nan))
+        ar = ak.to_numpy(ak.fill_none(var[cut], np.nan))
         return ar
 
 
