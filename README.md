@@ -8,12 +8,19 @@ Python package for analyzing W' + b in the electron and muon channels. The analy
 
 - [TriggerEfficiencyProcessor](processors/trigger_efficiency_processor.py) (trigger): Trigger efficiency processor that applies pre-selection and selection cuts (two bjets + one lepton + MET), and saves numerator and denominator as hist objects in a pickle file. 
 
-- [TTBarControlRegionProcessor](processors/ttbar_processor.py) (ttbar): TTbar Control Region processor that applies pre-selection and selection cuts (two bjets + one lepton + MET), saves unbinned branches as parquet files and cutflow dictionaries as a pickle file.
+- [TTBarControlRegionProcessor](processors/ttbar_processor.py) (ttbar): TTbar Control Region processor that applies pre-selection and selection cuts (two bjets + one lepton + MET), saves unbinned branches as parquet files and cutflow dictionaries as a pickle file in the format.
 
 To test locally first (recommended), can do e.g.:
 
 ```bash
 python run.py --channel ele --executor iterative --year 2017 --processor ttbar --nfiles 1 
+```
+Parquet and pickle files will be saved in the directory specified by the flag `--output_location`
+
+To see a description of all script parameters type:
+
+```bash
+python run.py --help
 ```
 
 General note: [coffea-casa](https://coffea-casa.readthedocs.io/en/latest/cc_user.html) is faster and more convenient, however still somewhat experimental so for large of inputs and/or processors which may require heavier cpu/memory Condor is recommended.
