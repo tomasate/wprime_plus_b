@@ -17,7 +17,7 @@ Python package for analyzing W' + b in the electron and muon channels. The analy
 To test locally first (recommended), can do e.g.:
 
 ```bash
-python run.py --channel ele --executor iterative --year 2017 --processor ttbar --nfiles 1 
+python run.py --channel ele --sample TTTo2L2Nu --executor iterative --year 2017 --processor ttbar --nfiles 1 
 ```
 Parquet and pickle files will be saved in the directory specified by the flag `--output_location`
 
