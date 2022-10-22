@@ -190,7 +190,7 @@ def add_electronID_weight(
     electron: ak.Array,
     year: str,
     mod: str = "",
-    wp: str = "wp80noiso",
+    wp: str = "wp80iso",
 ):
     """
     add electron identification scale factor
@@ -434,33 +434,3 @@ def add_muonTriggerIso_weight(
         weightUp=values["up"],
         weightDown=values["down"],
     )
-
-
-def add_lepton_weights(
-    weights: Type[Weights],
-    candidatelep: ak.Array,
-    year: str,
-    mod: str = "",
-    channel: str = "ele",
-):
-    """
-    add lepton weights
-
-    Parameters:
-    -----------
-        weights:
-            Weights object from coffea.analysis_tools
-        candidatelep:
-            Lepton candidate collection
-        year:
-            Year of the dataset {'2016', '2017', '2018'}
-        mod:
-            Year modifier {'', 'APV'}
-    """
-    if channel == "ele":
-        add_electronID_weight(weights, candidatelep, year, mod)
-        add_electronReco_weight(weights, candidatelep, year, mod)
-    if channel == "mu":
-        add_muon_weight(weights, candidatelep, "id", year, mod)
-        add_muon_weight(weights, candidatelep, "iso", year, mod)
-        add_muonTriggerIso_weight(weights, candidatelep, year, mod)
