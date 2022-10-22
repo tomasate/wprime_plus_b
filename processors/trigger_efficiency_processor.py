@@ -228,15 +228,43 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
                 wp="M", tagger="deepJet", year=self._year, mod=self._yearmod
             )
             self._btagSF.add_btag_weight(jets=events.Jet[good_bjets], weights=weights)
+
             # lepton weights
-            add_lepton_weights(
-                weights=weights,
-                candidatelep=candidatelep,
+            add_electronID_weight(
+                weights=weights, 
+                electron=ak.firsts(events.Electron[good_electrons]), 
+                year=self._year, 
+                mod=self._yearmod,
+                wp="wp80iso" if self.channel == "ele" else "wp90iso"
+            )
+            add_electronReco_weight(
+                weights=weights, 
+                electron=ak.firsts(events.Electron[good_electrons]), 
                 year=self._year,
                 mod=self._yearmod,
-                channel=self._channel,
             )
-
+            add_muon_weight(
+                weights=weights,
+                muon=ak.firsts(events.Muon[good_muons]), 
+                sf_type="id", 
+                year=self._year, 
+                mod=self._yearmod,
+                wp="medium" if self.channel == "ele" else "tight"
+            )
+            add_muon_weight(
+                weights=weights, 
+                muon=ak.firsts(events.Muon[good_muons]), 
+                sf_type="iso", 
+                year=self._year, 
+                mod=self._yearmod,
+                wp="medium" if self.channel == "ele" else "tight"
+            )
+            add_muonTriggerIso_weight(
+                weights=weights, 
+                muon=ak.firsts(events.Muon[good_muons]), 
+                year=self._year, 
+                mod=self._yearmod,
+            )
         # selections
         selection = PackedSelection()
         one_lepton = {
