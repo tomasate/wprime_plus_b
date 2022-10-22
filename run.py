@@ -16,19 +16,20 @@ def main(args):
     # load fileset
     with open(f"{loc_base}/data/simplified_samples.json", "r") as f:
         simplified_samples = json.load(f)[args.year]
-        simplified_samples = {v: k for k, v in simplified_samples.items()}
+        simplified_samples_r = {v: k for k, v in simplified_samples.items()}
     
     with open(f"{loc_base}/data/fileset/fileset_{args.year}_UL_NANO.json", "r") as f:
         data = json.load(f)
         
     for key, val in data.items():
-        if simplified_samples[args.sample] in key: 
-            fileset = {key: val}
+        if simplified_samples_r[args.sample] in key:
+            sample = simplified_samples[key]
+            fileset = {sample: val}
             if val is not None:
                 if args.nfiles == -1:
-                    fileset[key] = ["root://xcache/" + file for file in val]
+                    fileset[sample] = ["root://xcache/" + file for file in val]
                 else:
-                    fileset[key] = ["root://xcache/" + file for file in val[: args.nfiles]]
+                    fileset[sample] = ["root://xcache/" + file for file in val[: args.nfiles]]
 
     # define processor
     if args.processor == "ttbar":
