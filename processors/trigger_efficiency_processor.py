@@ -7,8 +7,16 @@ import hist as hist2
 from typing import List
 from coffea import processor
 from coffea.analysis_tools import Weights, PackedSelection
-from .corrections import add_pileup_weight, BTagCorrector, add_lepton_weights
 from .utils import normalize, pad_val, build_p4
+from .corrections import (
+    BTagCorrector,
+    add_pileup_weight,
+    add_electronID_weight,
+    add_electronReco_weight,
+    add_electronTrigger_weight,
+    add_muon_weight,
+    add_muonTriggerIso_weight,
+)
 
 
 class TriggerEfficiencyProcessor(processor.ProcessorABC):
@@ -243,6 +251,12 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
                 year=self._year,
                 mod=self._yearmod,
             )
+            add_electronTrigger_weight(
+                weights=weights, 
+                electron=ak.firsts(events.Electron[good_electrons]), 
+                year=self._year, 
+                mod=self._yearmod,
+            )
             add_muon_weight(
                 weights=weights,
                 muon=ak.firsts(events.Muon[good_muons]), 
@@ -265,6 +279,7 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
                 year=self._year, 
                 mod=self._yearmod,
             )
+            
         # selections
         selection = PackedSelection()
         one_lepton = {

@@ -299,7 +299,40 @@ def add_electronReco_weight(
         weightDown=values["down"],
     )
 
-
+def add_electronTrigger_weight(
+    weights: Type[Weights],
+    electron: ak.Array,
+    year: str,
+    mod: str = "",
+):
+    trigger_corrections = {
+        "2016APV": "/home/cms-jovyan/wprime_plus_b/data/electron_trigger_2016preVFP_UL.json",
+        "2016": "/home/cms-jovyan/wprime_plus_b/data/electron_trigger_2016postVFP_UL.json",
+        "2017": "/home/cms-jovyan/wprime_plus_b/data/electron_trigger_2017_UL.json",
+        "2018": "/home/cms-jovyan/wprime_plus_b/data/electron_trigger_2018_UL.json",
+    }
+    # correction set
+    cset = correctionlib.CorrectionSet.from_file(trigger_corrections[year + mod])
+    
+    # electron pt
+    electron_pt = np.array(ak.fill_none(electron.pt, 0.0))
+    electron_pt = np.clip(electron_pt, 10, 499.999)  
+    
+    # electron pseudorapidity
+    electron_eta = np.array(ak.fill_none(electron.eta, 0.0))
+    electron_eta = np.clip(electron_eta, -2.499, 2.499)  
+    
+    # scale factors (only nominal)
+    values = {}
+    values["nominal"] = cset["UL-Electron-Trigger-SF"].evaluate(
+        electron_eta, electron_pt
+    )
+    weights.add(
+        name=f"electronTrigger",
+        weight=values["nominal"],
+    )
+    
+    
 # Muon
 #
 # https://twiki.cern.ch/twiki/bin/view/CMS/MuonUL2016
