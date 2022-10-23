@@ -38,9 +38,10 @@ We use the common json format for scale factors (SF), hence the requirement to i
 * b-tagging
 * Electron ID
 * Electron Reconstruction
+* Electron Trigger
 * Muon ID
 * Muon Iso
-* Muon TriggerIso
+* Muon Trigger (Iso)
  
 
 ## Setting up coffea environments
