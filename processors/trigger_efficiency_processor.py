@@ -283,15 +283,17 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
         # selections
         selection = PackedSelection()
         one_lepton = {
-            "ele": (n_good_muons == 0) & (n_good_electrons == 1),
-            "mu": (n_good_muons == 1) & (n_good_electrons == 0),
+            "ele": (n_good_muons == 1) & (n_good_electrons == 1),
+            "mu": (n_good_muons == 1) & (n_good_electrons == 1),
         }
         selection.add("trigger_ele", trigger["ele"])
         selection.add("trigger_mu", trigger["mu"])
         selection.add("lumi", lumi_mask)
         selection.add("metfilters", metfilters)
-        selection.add("two_bjets", n_good_bjets == 2)
+        selection.add("two_bjets", n_good_bjets >= 1)
         selection.add("one_lepton", one_lepton[self._channel])
+        selection.add("good_electron", good_electrons)
+        selection.add("good_muon", good_muons)
 
         # regions
         regions = {
@@ -303,6 +305,8 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
                     "one_lepton",
                     "trigger_ele",
                     "trigger_mu",
+                    "good_electron",
+                    "good_muon"
                 ],
                 "denominator": [
                     "lumi",
@@ -310,6 +314,8 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
                     "two_bjets",
                     "one_lepton",
                     "trigger_mu",
+                    "good_electron",
+                    "good_muon"
                 ],
             },
             "mu": {
@@ -320,6 +326,8 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
                     "one_lepton",
                     "trigger_ele",
                     "trigger_mu",
+                    "good_electron",
+                    "good_muon"
                 ],
                 "denominator": [
                     "lumi",
@@ -327,6 +335,8 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
                     "two_bjets",
                     "one_lepton",
                     "trigger_ele",
+                    "good_electron",
+                    "good_muon"
                 ],
             },
         }
