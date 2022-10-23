@@ -294,7 +294,10 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
         selection.add("one_lepton", one_lepton[self._channel])
         selection.add("good_electron", ak.firsts(good_electrons))
         selection.add("good_muon", ak.firsts(good_muons))
-        selection.add("delta_r", lep_bjet_dr > 0.4)
+        selection.add(
+            "deltaR",
+            lep_bjet_dr > 0.4 if self._channel == "mu" else ak.ones_like(lep_bjet_dr),
+        )
 
         # regions
         regions = {
@@ -307,7 +310,8 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
                     "trigger_ele",
                     "trigger_mu",
                     "good_electron",
-                    "good_muon"
+                    "good_muon",
+                    "deltaR"
                 ],
                 "denominator": [
                     "lumi",
@@ -316,7 +320,8 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
                     "one_lepton",
                     "trigger_mu",
                     "good_electron",
-                    "good_muon"
+                    "good_muon",
+                    "deltaR"
                 ],
             },
             "mu": {
@@ -328,7 +333,8 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
                     "trigger_ele",
                     "trigger_mu",
                     "good_electron",
-                    "good_muon"
+                    "good_muon",
+                    "deltaR"
                 ],
                 "denominator": [
                     "lumi",
@@ -337,7 +343,8 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
                     "one_lepton",
                     "trigger_ele",
                     "good_electron",
-                    "good_muon"
+                    "good_muon",
+                    "deltaR"
                 ],
             },
         }
