@@ -296,7 +296,9 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
         selection.add("good_muon", ak.firsts(good_muons))
         selection.add(
             "deltaR",
-            lep_bjet_dr > 0.4 if self._channel == "mu" else ak.ones_like(lep_bjet_dr),
+            lep_bjet_dr > 0.4
+            if self._channel == "mu"
+            else ak.ones_like(lep_bjet_dr, dtype=bool),
         )
 
         # regions
