@@ -292,8 +292,9 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
         selection.add("metfilters", metfilters)
         selection.add("two_bjets", n_good_bjets >= 1)
         selection.add("one_lepton", one_lepton[self._channel])
-        selection.add("good_electron", good_electrons)
-        selection.add("good_muon", good_muons)
+        selection.add("good_electron", ak.firsts(good_electrons))
+        selection.add("good_muon", ak.firsts(good_muons))
+        selection.add("delta_r", lep_bjet_dr > 0.4)
 
         # regions
         regions = {
