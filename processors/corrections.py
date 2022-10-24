@@ -190,7 +190,7 @@ def add_electronID_weight(
     electron: ak.Array,
     year: str,
     mod: str = "",
-    wp: str = "wp80iso",
+    wp: str = "wp80noiso",
 ):
     """
     add electron identification scale factor

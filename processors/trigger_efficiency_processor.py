@@ -243,7 +243,7 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
                 electron=ak.firsts(events.Electron[good_electrons]), 
                 year=self._year, 
                 mod=self._yearmod,
-                wp="wp80iso" if self._channel == "ele" else "wp90iso"
+                wp="wp80noiso" if self._channel == "ele" else "wp90noiso"
             )
             add_electronReco_weight(
                 weights=weights, 
