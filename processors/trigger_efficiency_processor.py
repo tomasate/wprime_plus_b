@@ -65,18 +65,55 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
                 "mu": "SingleMuon",
             }
 
+        """
+        "lepton_kin": hist2.Hist(
+            hist2.axis.StrCategory([], name="region", growth=True),
+            hist2.axis.Variable(
+                [30, 60, 90, 120, 150, 180, 210, 240, 300, 500],
+                name="lep_pt",
+                label=r"lep $p_T$ [GeV]",
+            ),
+            hist2.axis.Regular(25, 0, 1, name="lep_miniIso", label="lep miniIso"),
+            hist2.axis.Regular(25, 0, 1, name="lep_relIso", label="lep RelIso"),
+            hist2.axis.Regular(50, -2.4, 2.4, name="lep_eta", label="lep $\eta$"),
+            hist2.storage.Weight(),
+        ),
+        """
+        """
+        "mix_kin": hist2.Hist(
+            hist2.axis.StrCategory([], name="region", growth=True),
+            hist2.axis.Regular(
+                40, 10, 800, name="lep_met_mt", label=r"$M_T$(lep, bJet) [GeV]"
+            ),
+            hist2.axis.Regular(
+                30, 0, 5, name="lep_bjet_dr", label="$\Delta R$(lep, bJet)"
+            ),
+            hist2.storage.Weight(),
+        ),
+        """
+            
         self.make_output = lambda: {
             "sumw": 0,
-            "lepton_kin": hist2.Hist(
+            "electron_kin": hist2.Hist(
                 hist2.axis.StrCategory([], name="region", growth=True),
                 hist2.axis.Variable(
                     [30, 60, 90, 120, 150, 180, 210, 240, 300, 500],
-                    name="lep_pt",
-                    label=r"lep $p_T$ [GeV]",
+                    name="electron_pt",
+                    label=r"electron $p_T$ [GeV]",
                 ),
-                hist2.axis.Regular(25, 0, 1, name="lep_miniIso", label="lep miniIso"),
-                hist2.axis.Regular(25, 0, 1, name="lep_relIso", label="lep RelIso"),
-                hist2.axis.Regular(50, -2.4, 2.4, name="lep_eta", label="lep $\eta$"),
+                hist2.axis.Regular(25, 0, 1, name="electron_relIso", label="electron RelIso"),
+                hist2.axis.Regular(50, -2.4, 2.4, name="electron_eta", label="electron $\eta$"),
+                hist2.storage.Weight(),
+            ),
+            "muon_kin": hist2.Hist(
+                hist2.axis.StrCategory([], name="region", growth=True),
+                hist2.axis.Variable(
+                    [30, 60, 90, 120, 150, 180, 210, 240, 300, 500],
+                    name="muon_pt",
+                    label=r"muon $p_T$ [GeV]",
+                ),
+                hist2.axis.Regular(25, 0, 1, name="muon_relIso", label="muon RelIso"),
+                hist2.axis.Regular(50, -2.4, 2.4, name="muon_eta", label="muon $\eta$"),
                 hist2.storage.Weight(),
             ),
             "jet_kin": hist2.Hist(
@@ -101,13 +138,37 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
             "mix_kin": hist2.Hist(
                 hist2.axis.StrCategory([], name="region", growth=True),
                 hist2.axis.Regular(
-                    40, 10, 800, name="lep_met_mt", label=r"$M_T$(lep, bJet) [GeV]"
+                    40, 10, 800, name="electron_met_mt", label=r"$M_T$(electron, bJet) [GeV]"
                 ),
                 hist2.axis.Regular(
-                    30, 0, 5, name="lep_bjet_dr", label="$\Delta R$(lep, bJet)"
+                    40, 10, 800, name="muon_met_mt", label=r"$M_T$(muon, bJet) [GeV]"
+                ),
+                hist2.axis.Regular(
+                    30, 0, 5, name="electron_bjet_dr", label="$\Delta R$(electron, bJet)"
+                ),
+                 hist2.axis.Regular(
+                    30, 0, 5, name="muon_bjet_dr", label="$\Delta R$(muon, bJet)"
                 ),
                 hist2.storage.Weight(),
             ),
+            "common_weights": hist2.Hist(
+                hist2.axis.StrCategory([], name="region", growth=True),
+                hist2.axis.Regular(25, 0, 2, name="pileup", label="pileup"),
+                hist2.axis.Regular(25, 0, 2, name="btagSF", label="btagSF"),
+            ),
+            "electron_weights": hist2.Hist(
+                hist2.axis.StrCategory([], name="region", growth=True),
+                hist2.axis.Regular(25, 0, 2, name="electronID", label="electronID"),
+                hist2.axis.Regular(25, 0, 2, name="electronReco", label="electronReco"),
+                hist2.axis.Regular(25, 0, 2, name="electronTrigger", label="electronTrigger"),
+            ),
+            "muon_weights": hist2.Hist(
+                hist2.axis.StrCategory([], name="region", growth=True),
+                hist2.axis.Regular(25, 0, 2, name="muonId", label="muonId"),
+                hist2.axis.Regular(25, 0, 2, name="muonIso", label="muonIso"),
+                hist2.axis.Regular(25, 0, 2, name="muonTriggerIso", label="muonTriggerIso"),
+            ),
+            
         }
 
     @property
@@ -157,17 +218,20 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
             )
         )
         n_good_electrons = ak.sum(good_electrons, axis=1)
-
+        electrons = ak.firsts(events.Electron[good_electrons])
+        electrons_p4 = build_p4(electrons)
+        
         # muons
-        # mediumId OR tightId?
-        # DO WE NEED LOOSE MUONS?
         good_muons = (
             (events.Muon.pt >= 30)
             & (np.abs(events.Muon.eta) < 2.4)
             & (events.Muon.mediumId if self._channel == "ele" else events.Muon.tightId)
         )
         n_good_muons = ak.sum(good_muons, axis=1)
+        muons = ak.firsts(events.Muon[good_muons])
+        muons_p4 = build_p4(muons)
 
+        """
         # get candidate lepton
         if self._channel == "ele":
             candidatelep = events.Electron[good_electrons]
@@ -175,16 +239,31 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
             candidatelep = events.Muon[good_muons]
         candidatelep = ak.firsts(candidatelep)
         candidatelep_p4 = build_p4(candidatelep)
-
+        """
+        
+        """
         # reliso for candidate lepton
         lep_reliso = (
             candidatelep.pfRelIso04_all
             if hasattr(candidatelep, "pfRelIso04_all")
             else candidatelep.pfRelIso03_all
         )
+        
         # miniso for candidate lepton
         lep_miso = candidatelep.miniPFRelIso_all
-
+        """
+        
+        ele_reliso = (
+            electrons.pfRelIso04_all
+            if hasattr(electrons, "pfRelIso04_all")
+            else electrons.pfRelIso03_all
+        )
+        mu_reliso = (
+            muons.pfRelIso04_all
+            if hasattr(muons, "pfRelIso04_all")
+            else muons.pfRelIso03_all
+        )
+        
         # b-jets
         good_bjets = (
             (events.Jet.pt >= 20)
@@ -197,19 +276,36 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
         candidatebjet = ak.firsts(events.Jet[good_bjets])
 
         # lepton-bjet delta R
-        lep_bjet_dr = candidatebjet.delta_r(candidatelep_p4)
-
+        #lep_bjet_dr = candidatebjet.delta_r(candidatelep_p4)
+        
+        ele_bjet_dr = candidatebjet.delta_r(electrons_p4)
+        mu_bjet_dr = candidatebjet.delta_r(muons_p4)
+        
         # MET
         met = events.MET
 
         # lepton-MET transverse mass
+        """
         mt_lep_met = np.sqrt(
             2.0
             * candidatelep_p4.pt
             * met.pt
             * (ak.ones_like(met.pt) - np.cos(candidatelep_p4.delta_phi(met)))
         )
-
+        """
+        mt_ele_met = np.sqrt(
+            2.0
+            * electrons_p4.pt
+            * met.pt
+            * (ak.ones_like(met.pt) - np.cos(electrons_p4.delta_phi(met)))
+        )
+        mt_mu_met = np.sqrt(
+            2.0
+            * muons_p4.pt
+            * met.pt
+            * (ak.ones_like(met.pt) - np.cos(muons_p4.delta_phi(met)))
+        )
+            
         # weights
         weights = Weights(nevents, storeIndividual=True)
         if self.isMC:
@@ -296,11 +392,11 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
         selection.add("good_muon", ak.firsts(good_muons))
         selection.add(
             "deltaR",
-            lep_bjet_dr > 0.4
+            mu_bjet_dr > 0.4
             if self._channel == "mu"
-            else ak.ones_like(lep_bjet_dr, dtype=bool),
+            else ak.ones_like(mu_bjet_dr, dtype=bool),
         )
-        selectrion.add("relIso", lep_reliso > 0.25)
+        selection.add("relIso", mu_reliso > 0.25)
 
         # regions
         regions = {
@@ -359,7 +455,8 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
         def fill(region: str):
             selections = regions[self._channel][region]
             cut = selection.all(*selections)
-
+            
+            """
             output["lepton_kin"].fill(
                 region=region,
                 lep_pt=normalize(candidatelep.pt, cut),
@@ -368,6 +465,7 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
                 lep_eta=normalize(candidatelep.eta, cut),
                 weight=weights.weight()[cut],
             )
+            """
             output["jet_kin"].fill(
                 region=region,
                 jet_pt=normalize(candidatebjet.pt, cut),
@@ -379,13 +477,54 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
                 met=normalize(met.pt, cut),
                 weight=weights.weight()[cut],
             )
+            """
             output["mix_kin"].fill(
                 region=region,
                 lep_met_mt=normalize(mt_lep_met, cut),
                 lep_bjet_dr=normalize(lep_bjet_dr, cut),
                 weight=weights.weight()[cut],
             )
-
+            """
+            output["electron_kin"].fill(
+                region=region,
+                electron_pt=normalize(electrons.pt, cut),
+                electron_relIso=normalize(ele_reliso, cut),
+                electron_eta=normalize(electrons.eta, cut),
+                weight=weights.weight()[cut],
+            )
+            output["muon_kin"].fill(
+                region=region,
+                muon_pt=normalize(muons.pt, cut),
+                muon_relIso=normalize(mu_reliso, cut),
+                muon_eta=normalize(muons.eta, cut),
+                weight=weights.weight()[cut],
+            )
+            output["mix_kin"].fill(
+                region=region,
+                electron_met_mt=normalize(mt_ele_met, cut),
+                muon_met_mt=normalize(mt_mu_met, cut),
+                electron_bjet_dr=normalize(ele_bjet_dr, cut),
+                muon_bjet_dr=normalize(mu_bjet_dr, cut),
+                weight=weights.weight()[cut],
+            )
+            output["common_weights"].fill(
+                region=region,
+                pileup=normalize(weights.partial_weight(["pileup"]), cut),
+                btagSF=normalize(weights.partial_weight(["btagSF"]), cut),
+            )
+            output["electron_weights"].fill(
+                region=region,
+                electronID=normalize(weights.partial_weight(["electronID"]), cut),
+                electronReco=normalize(weights.partial_weight(["electronReco"]), cut),
+                electronTrigger=normalize(weights.partial_weight(["electronTrigger"]), cut),
+            )
+            output["muon_weights"].fill(
+                region=region,
+                muonId=normalize(weights.partial_weight(["muonId"]), cut),
+                muonIso=normalize(weights.partial_weight(["muonIso"]), cut),
+                muonTriggerIso=normalize(weights.partial_weight(["muonTriggerIso"]), cut),
+            )
+            
         for region in regions[self._channel]:
             fill(region)
 
