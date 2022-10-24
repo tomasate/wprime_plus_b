@@ -237,7 +237,7 @@ def add_electronID_weight(
     )
 
     weights.add(
-        name=f"electronID_{wp}",
+        name=f"electronID",
         weight=values["nominal"],
         weightUp=values["up"],
         weightDown=values["down"],
@@ -293,7 +293,7 @@ def add_electronReco_weight(
     )
 
     weights.add(
-        name=f"electronRecoAbove20",
+        name=f"electronReco",
         weight=values["nominal"],
         weightUp=values["up"],
         weightDown=values["down"],
