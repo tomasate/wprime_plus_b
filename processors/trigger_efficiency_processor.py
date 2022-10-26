@@ -411,7 +411,6 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
                     "good_electron",
                     "good_muon",
                     "deltaR",
-                    "relIso"
                 ],
                 "denominator": [
                     "lumi",
@@ -422,7 +421,6 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
                     "good_electron",
                     "good_muon",
                     "deltaR",
-                    "relIso"
                 ],
             },
             "mu": {
@@ -436,7 +434,6 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
                     "good_electron",
                     "good_muon",
                     "deltaR",
-                    "relIso"
                 ],
                 "denominator": [
                     "lumi",
@@ -447,7 +444,6 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
                     "good_electron",
                     "good_muon",
                     "deltaR",
-                    "relIso"
                 ],
             },
         }
