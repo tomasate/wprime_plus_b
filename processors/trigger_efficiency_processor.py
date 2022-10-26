@@ -396,7 +396,7 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
             if self._channel == "mu"
             else ak.ones_like(mu_bjet_dr, dtype=bool),
         )
-        selection.add("relIso", mu_reliso > 0.25)
+        #selection.add("relIso", mu_reliso > 0.25)
 
         # regions
         regions = {
