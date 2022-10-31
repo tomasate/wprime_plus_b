@@ -551,7 +551,7 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
                     mod=self._yearmod,
                 )
                 
-                fill(region, numerator_weights)
+                fill(region, electron_denominator_weights)
                 
             elif (self._channel == "mu") and (region == "denominator"):
                 muon_denominator_weights = copy.copy(weights)
@@ -563,7 +563,7 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
                     mod=self._yearmod,
                 )
                 
-                fill(region, numerator_weights)
+                fill(region, muon_denominator_weights)
                 
         return {dataset: output}
 
