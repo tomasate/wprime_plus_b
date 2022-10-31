@@ -133,6 +133,9 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
                     name="met",
                     label=r"$p_T^{miss}$ [GeV]",
                 ),
+                hist2.axis.Regular(
+                    50, -4.0, 4.0, name="met_phi", label=r"$\phi(p_T^{miss})$"
+                ),
                 hist2.storage.Weight(),
             ),
             "mix_kin": hist2.Hist(
@@ -471,6 +474,7 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
             output["met_kin"].fill(
                 region=region,
                 met=normalize(met.pt, cut),
+                met_phi=normalize(met.phi, cut),
                 weight=weights.weight()[cut],
             )
             """
