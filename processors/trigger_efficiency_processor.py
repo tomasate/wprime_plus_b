@@ -171,7 +171,10 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
                 hist2.axis.Regular(25, 0, 2, name="muonIso", label="muonIso"),
                 hist2.axis.Regular(25, 0, 2, name="muonTriggerIso", label="muonTriggerIso"),
             ),
-            
+            "vertices": hist2.Hist(
+                hist2.axis.StrCategory([], name="region", growth=True),
+                hist2.axis.IntCategory(np.arange(100), name="npv", label="Number of PV", growth=True)
+            )
         }
 
     @property
@@ -223,6 +226,7 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
         n_good_electrons = ak.sum(good_electrons, axis=1)
         electrons = ak.firsts(events.Electron[good_electrons])
         electrons_p4 = build_p4(electrons)
+        
         
         # muons
         good_muons = (
@@ -523,6 +527,10 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
                 muonId=normalize(weights.partial_weight(["muonId"]), cut),
                 muonIso=normalize(weights.partial_weight(["muonIso"]), cut),
                 muonTriggerIso=normalize(weights.partial_weight(["muonTriggerIso"]), cut),
+            )
+            output["vertices"].fill(
+                region=region,
+                npv=events.PV.npvs,
             )
             
         for region in regions[self._channel]:
