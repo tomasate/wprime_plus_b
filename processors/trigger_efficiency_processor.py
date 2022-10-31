@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import awkward as ak
 import hist as hist2
+import copy
 from typing import List
 from coffea import processor
 from coffea.analysis_tools import Weights, PackedSelection
@@ -354,12 +355,6 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
                 year=self._year,
                 mod=self._yearmod,
             )
-            add_electronTrigger_weight(
-                weights=weights, 
-                electron=ak.firsts(events.Electron[good_electrons]), 
-                year=self._year, 
-                mod=self._yearmod,
-            )
             add_muon_weight(
                 weights=weights,
                 muon=ak.firsts(events.Muon[good_muons]), 
@@ -375,12 +370,6 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
                 year=self._year, 
                 mod=self._yearmod,
                 wp="medium" if self._channel == "ele" else "tight"
-            )
-            add_muonTriggerIso_weight(
-                weights=weights, 
-                muon=ak.firsts(events.Muon[good_muons]), 
-                year=self._year, 
-                mod=self._yearmod,
             )
             
         # selections
@@ -413,21 +402,21 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
                     "metfilters",
                     "two_bjets",
                     "one_lepton",
-                    "trigger_ele",
-                    "trigger_mu",
                     "good_electron",
                     "good_muon",
                     "deltaR",
+                    "trigger_ele", # main
+                    "trigger_mu",  # reference
                 ],
                 "denominator": [
                     "lumi",
                     "metfilters",
                     "two_bjets",
                     "one_lepton",
-                    "trigger_mu",
                     "good_electron",
                     "good_muon",
                     "deltaR",
+                    "trigger_mu", # reference
                 ],
             },
             "mu": {
@@ -455,7 +444,7 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
             },
         }
 
-        def fill(region: str):
+        def fill(region: str, weights):
             selections = regions[self._channel][region]
             cut = selection.all(*selections)
             
@@ -534,8 +523,48 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
             )
             
         for region in regions[self._channel]:
-            fill(region)
-
+            if region == "numerator":
+                numerator_weights = copy.copy(weights)
+               
+                add_electronTrigger_weight(
+                    weights=numerator_weights, 
+                    electron=ak.firsts(events.Electron[good_electrons]), 
+                    year=self._year, 
+                    mod=self._yearmod,
+                )
+                add_muonTriggerIso_weight(
+                    weights=numerator_weights, 
+                    muon=ak.firsts(events.Muon[good_muons]), 
+                    year=self._year, 
+                    mod=self._yearmod,
+                )
+                
+                fill(region, numerator_weights)
+             
+            elif (self._channel == "ele") and (region == "denominator"):
+                electron_denominator_weights = copy.copy(weights)
+                
+                add_muonTriggerIso_weight(
+                    weights=electron_denominator_weights, 
+                    muon=ak.firsts(events.Muon[good_muons]), 
+                    year=self._year, 
+                    mod=self._yearmod,
+                )
+                
+                fill(region, numerator_weights)
+                
+            elif (self._channel == "mu") and (region == "denominator"):
+                muon_denominator_weights = copy.copy(weights)
+                
+                add_electronTrigger_weight(
+                    weights=muon_denominator_weights, 
+                    electron=ak.firsts(events.Electron[good_electrons]), 
+                    year=self._year, 
+                    mod=self._yearmod,
+                )
+                
+                fill(region, numerator_weights)
+                
         return {dataset: output}
 
     def postprocess(self, accumulator):
