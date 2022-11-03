@@ -334,6 +334,9 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
             if self._channel == "mu"
             else ak.ones_like(mu_bjet_dr, dtype=bool),
         )
+        selection.add("muonIso", mu_reliso < 0.25)
+        selection.add("electronIso", ele_reliso < 0.25)
+        
         # regions
         regions = {
             "ele": {
@@ -345,6 +348,8 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
                     "good_electron",
                     "good_muon",
                     "deltaR",
+                    "muonIso",
+                    "electronIso",
                     "trigger_ele", 
                     "trigger_mu",  
                 ],
@@ -356,6 +361,8 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
                     "good_electron",
                     "good_muon",
                     "deltaR",
+                    "muonIso",
+                    "electronIso",
                     "trigger_mu", 
                 ],
             },
@@ -365,21 +372,25 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
                     "metfilters",
                     "two_bjets",
                     "one_lepton",
-                    "trigger_ele",
-                    "trigger_mu",
                     "good_electron",
                     "good_muon",
                     "deltaR",
+                    "muonIso",
+                    "electronIso",
+                    "trigger_ele",
+                    "trigger_mu",
                 ],
                 "denominator": [
                     "lumi",
                     "metfilters",
                     "two_bjets",
                     "one_lepton",
-                    "trigger_ele",
                     "good_electron",
                     "good_muon",
                     "deltaR",
+                    "muonIso",
+                    "electronIso",
+                    "trigger_ele",
                 ],
             },
         }
