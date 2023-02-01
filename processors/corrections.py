@@ -16,6 +16,7 @@ POG_JSONS = {
     "electron": ["EGM", "electron.json.gz"],
     "pileup": ["LUM", "puWeights.json.gz"],
     "btag": ["BTV", "btagging.json.gz"],
+    "met": ["JME", "met.json.gz"]
 }
 
 POG_YEARS = {
@@ -467,3 +468,57 @@ def add_muonTriggerIso_weight(
         weightUp=values["up"],
         weightDown=values["down"],
     )
+    
+# ----------------------------------
+# met phi modulation
+# -----------------------------------
+def get_met_corrections(
+    year: str, 
+    is_mc: bool, 
+    met_pt: ak.Array, 
+    met_phi: ak.Array, 
+    npvs: ak.Array,
+    mod: str = "",
+):
+    """
+    return corrected MET pt and phi arrays 
+
+    Parameters:
+    -----------
+        year:
+            Year of the dataset {'2016', '2017', '2018'}
+        is_mc:
+            If dataset is MC {True, False}
+        met_pt:
+            MET transverse momentum
+        met_phi:
+            MET azimuthal angle
+        npvs:
+            Total number of reconstructed primary vertices
+        mod:
+            Year modifier {'', 'APV'}
+    """
+    cset = correctionlib.CorrectionSet.from_file(
+        get_pog_json(json_name="met", year=year)
+    )
+    # make sure to not cross the maximum allowed value for uncorrected met 
+    met_pt = np.clip(met_pt, 0.0, 6499.0)  
+    met_phi = np.clip(met_phi, -3.5, 3.5)  
+    
+    run_ranges = { 
+        "2016APV": [272007, 278771],
+        "2016": [278769, 284045],
+        "2017": [297020, 306463],
+        "2018":  [315252, 325274]
+    }
+    
+    data_kind = "mc" if is_mc else "data"
+    run = np.random.randint(run_ranges[year][0], run_ranges[year][1], size=len(met_pt))
+    
+    try:
+        corrected_met_pt = cset[f"pt_metphicorr_pfmet_{data_kind}"].evaluate(met_pt.to_numpy(), met_phi.to_numpy(), npvs.to_numpy(), run)
+        corrected_met_phi = cset[f"phi_metphicorr_pfmet_{data_kind}"].evaluate(met_pt.to_numpy(), met_phi.to_numpy(), npvs.to_numpy(), run)
+
+        return corrected_met_pt, corrected_met_phi
+    except:
+        return met_pt, met_phi
