@@ -16,7 +16,7 @@ POG_JSONS = {
     "electron": ["EGM", "electron.json.gz"],
     "pileup": ["LUM", "puWeights.json.gz"],
     "btag": ["BTV", "btagging.json.gz"],
-    "met": ["JME", "met.json.gz"]
+    "met": ["JME", "met.json.gz"],
 }
 
 POG_YEARS = {
@@ -300,6 +300,7 @@ def add_electronReco_weight(
         weightDown=values["down"],
     )
 
+
 def add_electronTrigger_weight(
     weights: Type[Weights],
     electron: ak.Array,
@@ -314,15 +315,15 @@ def add_electronTrigger_weight(
     }
     # correction set
     cset = correctionlib.CorrectionSet.from_file(trigger_corrections[year + mod])
-    
+
     # electron pt
     electron_pt = np.array(ak.fill_none(electron.pt, 0.0))
-    electron_pt = np.clip(electron_pt, 10, 499.999)  
-    
+    electron_pt = np.clip(electron_pt, 10, 499.999)
+
     # electron pseudorapidity
     electron_eta = np.array(ak.fill_none(electron.eta, 0.0))
-    electron_eta = np.clip(electron_eta, -2.499, 2.499)  
-    
+    electron_eta = np.clip(electron_eta, -2.499, 2.499)
+
     # scale factors (only nominal)
     values = {}
     values["nominal"] = cset["UL-Electron-Trigger-SF"].evaluate(
@@ -332,8 +333,8 @@ def add_electronTrigger_weight(
         name=f"electronTrigger",
         weight=values["nominal"],
     )
-    
-    
+
+
 # Muon
 #
 # https://twiki.cern.ch/twiki/bin/view/CMS/MuonUL2016
@@ -468,20 +469,21 @@ def add_muonTriggerIso_weight(
         weightUp=values["up"],
         weightDown=values["down"],
     )
-    
+
+
 # ----------------------------------
 # met phi modulation
 # -----------------------------------
 def get_met_corrections(
-    year: str, 
-    is_mc: bool, 
-    met_pt: ak.Array, 
-    met_phi: ak.Array, 
+    year: str,
+    is_mc: bool,
+    met_pt: ak.Array,
+    met_phi: ak.Array,
     npvs: ak.Array,
     mod: str = "",
 ):
     """
-    return corrected MET pt and phi arrays 
+    return corrected MET pt and phi arrays
 
     Parameters:
     -----------
@@ -501,23 +503,27 @@ def get_met_corrections(
     cset = correctionlib.CorrectionSet.from_file(
         get_pog_json(json_name="met", year=year)
     )
-    # make sure to not cross the maximum allowed value for uncorrected met 
-    met_pt = np.clip(met_pt, 0.0, 6499.0)  
-    met_phi = np.clip(met_phi, -3.5, 3.5)  
-    
-    run_ranges = { 
+    # make sure to not cross the maximum allowed value for uncorrected met
+    met_pt = np.clip(met_pt, 0.0, 6499.0)
+    met_phi = np.clip(met_phi, -3.5, 3.5)
+
+    run_ranges = {
         "2016APV": [272007, 278771],
         "2016": [278769, 284045],
         "2017": [297020, 306463],
-        "2018":  [315252, 325274]
+        "2018": [315252, 325274],
     }
-    
+
     data_kind = "mc" if is_mc else "data"
     run = np.random.randint(run_ranges[year][0], run_ranges[year][1], size=len(met_pt))
-    
+
     try:
-        corrected_met_pt = cset[f"pt_metphicorr_pfmet_{data_kind}"].evaluate(met_pt.to_numpy(), met_phi.to_numpy(), npvs.to_numpy(), run)
-        corrected_met_phi = cset[f"phi_metphicorr_pfmet_{data_kind}"].evaluate(met_pt.to_numpy(), met_phi.to_numpy(), npvs.to_numpy(), run)
+        corrected_met_pt = cset[f"pt_metphicorr_pfmet_{data_kind}"].evaluate(
+            met_pt.to_numpy(), met_phi.to_numpy(), npvs.to_numpy(), run
+        )
+        corrected_met_phi = cset[f"phi_metphicorr_pfmet_{data_kind}"].evaluate(
+            met_pt.to_numpy(), met_phi.to_numpy(), npvs.to_numpy(), run
+        )
 
         return corrected_met_pt, corrected_met_phi
     except:
