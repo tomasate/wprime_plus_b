@@ -10,6 +10,7 @@ from coffea import processor
 from dask.distributed import Client
 from distributed.diagnostics.plugin import UploadDirectory
 
+
 def main(args):
     loc_base = os.environ["PWD"]
 
@@ -17,10 +18,8 @@ def main(args):
     with open(f"{loc_base}/data/simplified_samples.json", "r") as f:
         simplified_samples = json.load(f)[args.year]
         simplified_samples_r = {v: k for k, v in simplified_samples.items()}
-    
     with open(f"{loc_base}/data/fileset/fileset_{args.year}_UL_NANO.json", "r") as f:
         data = json.load(f)
-        
     for key, val in data.items():
         if simplified_samples_r[args.sample] in key:
             sample = simplified_samples[key]
@@ -29,15 +28,17 @@ def main(args):
                 if args.nfiles == -1:
                     fileset[sample] = ["root://xcache/" + file for file in val]
                 else:
-                    fileset[sample] = ["root://xcache/" + file for file in val[: args.nfiles]]
-
+                    fileset[sample] = [
+                        "root://xcache/" + file for file in val[: args.nfiles]
+                    ]
     # define processor
     if args.processor == "ttbar":
-        from processors.ttbar_processor import TTBarControlRegionProcessor
-        proc = TTBarControlRegionProcessor
+        from processors.ttbar_processor import TTbarControlRegionProcessor
         
+        proc = TTbarControlRegionProcessor
     if args.processor == "trigger":
         from processors.trigger_efficiency_processor import TriggerEfficiencyProcessor
+
         proc = TriggerEfficiencyProcessor
         
     # executors and arguments
@@ -49,10 +50,9 @@ def main(args):
     executor_args = {
         "schema": processor.NanoAODSchema,
     }
-    
+
     if args.executor == "futures":
         executor_args.update({"workers": args.workers})
-        
     if args.executor == "dask":
         client = Client(
             "tls://daniel-2eocampo-2ehenao-40cern-2ech.dask.cmsaf-prod.flatiron.hollandhpc.org:8786"
@@ -86,10 +86,24 @@ def main(args):
     # save dictionary with cutflows
     date = datetime.today().strftime("%Y-%m-%d")
     if not os.path.exists(
-        args.output_location + date + "/" + args.processor + "/" + args.year + "/" + args.channel
+        args.output_location
+        + date
+        + "/"
+        + args.processor
+        + "/"
+        + args.year
+        + "/"
+        + args.channel
     ):
         os.makedirs(
-            args.output_location + date + "/" + args.processor + "/" + args.year + "/" + args.channel
+            args.output_location
+            + date
+            + "/"
+            + args.processor
+            + "/"
+            + args.year
+            + "/"
+            + args.channel
         )
     with open(
         args.output_location
