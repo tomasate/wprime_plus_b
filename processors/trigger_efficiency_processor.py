@@ -16,6 +16,7 @@ from .corrections import (
     add_electronTrigger_weight,
     add_muon_weight,
     add_muonTriggerIso_weight,
+    get_met_corrections
 )
 
 
@@ -116,27 +117,6 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
                 ),
                 hist2.storage.Weight(),
             ),
-            "vertices": hist2.Hist(
-                hist2.axis.StrCategory([], name="region", growth=True),
-                hist2.axis.IntCategory(np.arange(100), name="npv", label="Number of PV", growth=True)
-            ),
-            "common_weights": hist2.Hist(
-                hist2.axis.StrCategory([], name="region", growth=True),
-                hist2.axis.Regular(25, 0, 2, name="pileup", label="pileup"),
-                hist2.axis.Regular(25, 0, 2, name="btagSF", label="btagSF"),
-            ),
-            "electron_weights": hist2.Hist(
-                hist2.axis.StrCategory([], name="region", growth=True),
-                hist2.axis.Regular(25, 0, 2, name="electronID", label="electronID"),
-                hist2.axis.Regular(25, 0, 2, name="electronReco", label="electronReco"),
-                hist2.axis.Regular(25, 0, 2, name="electronTrigger", label="electronTrigger"),
-            ),
-            "muon_weights": hist2.Hist(
-                hist2.axis.StrCategory([], name="region", growth=True),
-                hist2.axis.Regular(25, 0, 2, name="muonId", label="muonId"),
-                hist2.axis.Regular(25, 0, 2, name="muonIso", label="muonIso"),
-                hist2.axis.Regular(25, 0, 2, name="muonTriggerIso", label="muonTriggerIso"),
-            )
         }
 
     @property
@@ -211,6 +191,14 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
         
         # missing energy
         met = events.MET
+        met["pt"], met["phi"] = get_met_corrections(
+            year=self._year,
+            is_mc=self.isMC,
+            met_pt=met.pt,
+            met_phi=met.phi,
+            npvs=events.PV.npvs,
+            mod=self._yearmod,
+        )
         
         # relative Iso
         ele_reliso = (
@@ -316,26 +304,19 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
 
         # selections
         selection = PackedSelection()
-        one_lepton = {
-            "ele": (n_good_muons == 1) & (n_good_electrons == 1),
-            "mu": (n_good_muons == 1) & (n_good_electrons == 1),
-        }
         selection.add("trigger_ele", trigger["ele"])
         selection.add("trigger_mu", trigger["mu"])
         selection.add("lumi", lumi_mask)
         selection.add("metfilters", metfilters)
         selection.add("two_bjets", n_good_bjets >= 1)
-        selection.add("one_lepton", one_lepton[self._channel])
-        selection.add("good_electron", ak.firsts(good_electrons))
-        selection.add("good_muon", ak.firsts(good_muons))
+        selection.add("one_electron", n_good_electrons == 1)
+        selection.add("one_muon", n_good_muons == 1)
         selection.add(
             "deltaR",
             mu_bjet_dr > 0.4
             if self._channel == "mu"
             else ak.ones_like(mu_bjet_dr, dtype=bool),
         )
-        selection.add("muonIso", mu_reliso < 0.25)
-        selection.add("electronIso", ele_reliso < 0.25)
         
         # regions
         regions = {
@@ -344,12 +325,8 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
                     "lumi",
                     "metfilters",
                     "two_bjets",
-                    "one_lepton",
-                    "good_electron",
-                    "good_muon",
-                    "deltaR",
-                    "muonIso",
-                    "electronIso",
+                    "one_electron",
+                    "one_muon",
                     "trigger_ele", 
                     "trigger_mu",  
                 ],
@@ -357,12 +334,8 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
                     "lumi",
                     "metfilters",
                     "two_bjets",
-                    "one_lepton",
-                    "good_electron",
-                    "good_muon",
-                    "deltaR",
-                    "muonIso",
-                    "electronIso",
+                    "one_electron",
+                    "one_muon",
                     "trigger_mu", 
                 ],
             },
@@ -371,12 +344,9 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
                     "lumi",
                     "metfilters",
                     "two_bjets",
-                    "one_lepton",
-                    "good_electron",
-                    "good_muon",
+                    "one_electron",
+                    "one_muon",
                     "deltaR",
-                    "muonIso",
-                    "electronIso",
                     "trigger_ele",
                     "trigger_mu",
                 ],
@@ -384,12 +354,9 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
                     "lumi",
                     "metfilters",
                     "two_bjets",
-                    "one_lepton",
-                    "good_electron",
-                    "good_muon",
+                    "one_electron",
+                    "one_muon",
                     "deltaR",
-                    "muonIso",
-                    "electronIso",
                     "trigger_ele",
                 ],
             },
@@ -460,28 +427,7 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
                 muon_bjet_dr=normalize(mu_bjet_dr, cut),
                 weight=region_weight,
             )
-            output["vertices"].fill(
-                region=region,
-                npv=normalize(events.PV.npvs, cut),
-                weight=region_weight,
-            )
-            output["common_weights"].fill(
-                region=region,
-                pileup=weights.partial_weight(["pileup"])[cut],
-                btagSF=weights.partial_weight(["btagSF"])[cut],
-            )
-            output["electron_weights"].fill(
-                region=region,
-                electronID=weights.partial_weight(["electronID"])[cut],
-                electronReco=weights.partial_weight(["electronReco"])[cut],
-                electronTrigger=weights.partial_weight(["electronTrigger"])[cut],
-            )
-            output["muon_weights"].fill(
-                region=region,
-                muonId=weights.partial_weight(["muonId"])[cut],
-                muonIso=weights.partial_weight(["muonIso"])[cut],
-                muonTriggerIso=weights.partial_weight(["muonTriggerIso"])[cut],
-            )
+           
         for region in regions[self._channel]:
             fill(region)
                 
