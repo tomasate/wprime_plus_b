@@ -308,15 +308,13 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
         selection.add("trigger_mu", trigger["mu"])
         selection.add("lumi", lumi_mask)
         selection.add("metfilters", metfilters)
-        selection.add("two_bjets", n_good_bjets >= 1)
         selection.add("one_electron", n_good_electrons == 1)
         selection.add("one_muon", n_good_muons == 1)
-        selection.add(
-            "deltaR",
-            mu_bjet_dr > 0.4
-            if self._channel == "mu"
-            else ak.ones_like(mu_bjet_dr, dtype=bool),
-        )
+        selection.add("ele_reliso", ele_reliso < 0.25)
+        selection.add("mu_reliso", mu_reliso < 0.25)
+        selection.add("deltaR", mu_bjet_dr > 0.4)
+        selection.add("two_bjets", n_good_bjets >= 1)
+        
         
         # regions
         regions = {
@@ -324,18 +322,18 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
                 "numerator": [
                     "lumi",
                     "metfilters",
-                    "two_bjets",
                     "one_electron",
                     "one_muon",
+                    "two_bjets",
                     "trigger_ele", 
                     "trigger_mu",  
                 ],
                 "denominator": [
                     "lumi",
                     "metfilters",
-                    "two_bjets",
                     "one_electron",
                     "one_muon",
+                    "two_bjets",
                     "trigger_mu", 
                 ],
             },
@@ -343,20 +341,24 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
                 "numerator": [
                     "lumi",
                     "metfilters",
-                    "two_bjets",
                     "one_electron",
                     "one_muon",
+                    "ele_reliso",
+                    "mu_reliso",
                     "deltaR",
+                    "two_bjets",
                     "trigger_ele",
                     "trigger_mu",
                 ],
                 "denominator": [
                     "lumi",
                     "metfilters",
-                    "two_bjets",
                     "one_electron",
                     "one_muon",
+                    "ele_reliso",
+                    "mu_reliso",
                     "deltaR",
+                    "two_bjets",
                     "trigger_ele",
                 ],
             },
