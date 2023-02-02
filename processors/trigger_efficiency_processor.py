@@ -57,6 +57,7 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
         # output histograms
         self.make_output = lambda: {
             "sumw": 0,
+            "cut_flow": {},
             "electron_kin": hist2.Hist(
                 hist2.axis.StrCategory([], name="region", growth=True),
                 hist2.axis.Variable(
@@ -118,7 +119,24 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
                 hist2.storage.Weight(),
             ),
         }
-
+    
+    def add_selection(
+        self,
+        name: str,
+        sel: ak.Array,
+    ) -> None:
+        """
+        Adds selection to PackedSelection object and the cutflow dictionary
+        taken from: github.com/cmantill/boostedhiggs/blob/main/boostedhiggs/hwwprocessor.py
+        """
+        self.selections.add(name, sel)
+        selection = self.selections.all(*self.selections.names)
+        '''if self.isMC:
+            weight = self.weights.weight()
+            self.output['cut_flow'][name] = float(weight[selection].sum())'''
+        #else:
+        self.output['cut_flow'][name] = np.sum(selection)
+        
     @property
     def accumulator(self):
         return self._accumulator
@@ -127,7 +145,8 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
         dataset = events.metadata["dataset"]
         nevents = len(events)
         self.isMC = hasattr(events, "genWeight")
-        output = self.make_output()
+        self.output = self.make_output()
+        self.output['cut_flow']['nevents'] = nevents
     
         # luminosity
         if not self.isMC:
@@ -235,7 +254,7 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
         weights = Weights(nevents, storeIndividual=True)
         if self.isMC:
             # genweight
-            output["sumw"] = ak.sum(events.genWeight)
+            self.output["sumw"] = ak.sum(events.genWeight)
             weights.add("genweight", events.genWeight)
             # L1prefiring
             if self._year in ("2016", "2017"):
@@ -303,17 +322,17 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
             )
 
         # selections
-        selection = PackedSelection()
-        selection.add("trigger_ele", trigger["ele"])
-        selection.add("trigger_mu", trigger["mu"])
-        selection.add("lumi", lumi_mask)
-        selection.add("metfilters", metfilters)
-        selection.add("one_electron", n_good_electrons == 1)
-        selection.add("one_muon", n_good_muons == 1)
-        selection.add("ele_reliso", ele_reliso < 0.25)
-        selection.add("mu_reliso", mu_reliso < 0.25)
-        selection.add("deltaR", mu_bjet_dr > 0.4)
-        selection.add("two_bjets", n_good_bjets >= 1)
+        self.selections = PackedSelection()
+        self.add_selection("trigger_ele", trigger["ele"])
+        self.add_selection("trigger_mu", trigger["mu"])
+        self.add_selection("lumi", lumi_mask)
+        self.add_selection("metfilters", metfilters)
+        self.add_selection("one_electron", n_good_electrons == 1)
+        self.add_selection("one_muon", n_good_muons == 1)
+        self.add_selection("ele_reliso", ele_reliso < 0.25)
+        self.add_selection("mu_reliso", mu_reliso < 0.25)
+        self.add_selection("deltaR", mu_bjet_dr > 0.4)
+        self.add_selection("two_bjets", n_good_bjets >= 1)
         
         
         # regions
@@ -389,39 +408,39 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
         # filling histograms
         def fill(region: str):
             selections = regions[self._channel][region]
-            cut = selection.all(*selections)
+            cut = self.selections.all(*selections)
             
             region_weights = weights_per_region[self._channel][region]
             region_weight = weights.partial_weight(region_weights)[cut]
     
-            output["jet_kin"].fill(
+            self.output["jet_kin"].fill(
                 region=region,
                 jet_pt=normalize(candidatebjet.pt, cut),
                 jet_eta=normalize(candidatebjet.eta, cut),
                 weight=region_weight,
             )
-            output["met_kin"].fill(
+            self.output["met_kin"].fill(
                 region=region,
                 met=normalize(met.pt, cut),
                 met_phi=normalize(met.phi, cut),
                 weight=region_weight,
             )
 
-            output["electron_kin"].fill(
+            self.output["electron_kin"].fill(
                 region=region,
                 electron_pt=normalize(electrons.pt, cut),
                 electron_relIso=normalize(ele_reliso, cut),
                 electron_eta=normalize(electrons.eta, cut),
                 weight=region_weight,
             )
-            output["muon_kin"].fill(
+            self.output["muon_kin"].fill(
                 region=region,
                 muon_pt=normalize(muons.pt, cut),
                 muon_relIso=normalize(mu_reliso, cut),
                 muon_eta=normalize(muons.eta, cut),
                 weight=region_weight,
             )
-            output["mix_kin"].fill(
+            self.output["mix_kin"].fill(
                 region=region,
                 electron_met_mt=normalize(mt_ele_met, cut),
                 muon_met_mt=normalize(mt_mu_met, cut),
@@ -433,7 +452,7 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
         for region in regions[self._channel]:
             fill(region)
                 
-        return {dataset: output}
+        return {dataset: self.output}
 
     def postprocess(self, accumulator):
         return accumulator
