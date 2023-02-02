@@ -57,7 +57,10 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
         # output histograms
         self.make_output = lambda: {
             "sumw": 0,
-            "cut_flow": {},
+            "cutflow": {
+                "numerator": {},
+                "denominator": {},
+            },
             "electron_kin": hist2.Hist(
                 hist2.axis.StrCategory([], name="region", growth=True),
                 hist2.axis.Variable(
@@ -119,23 +122,7 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
                 hist2.storage.Weight(),
             ),
         }
-    
-    def add_selection(
-        self,
-        name: str,
-        sel: ak.Array,
-    ) -> None:
-        """
-        Adds selection to PackedSelection object and the cutflow dictionary
-        taken from: github.com/cmantill/boostedhiggs/blob/main/boostedhiggs/hwwprocessor.py
-        """
-        self.selections.add(name, sel)
-        selection = self.selections.all(*self.selections.names)
-        '''if self.isMC:
-            weight = self.weights.weight()
-            self.output['cut_flow'][name] = float(weight[selection].sum())'''
-        #else:
-        self.output['cut_flow'][name] = np.sum(selection)
+
         
     @property
     def accumulator(self):
@@ -146,7 +133,7 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
         nevents = len(events)
         self.isMC = hasattr(events, "genWeight")
         self.output = self.make_output()
-        self.output['cut_flow']['nevents'] = nevents
+        self.output['cutflow']['nevents'] = nevents
     
         # luminosity
         if not self.isMC:
@@ -323,16 +310,16 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
 
         # selections
         self.selections = PackedSelection()
-        self.add_selection("trigger_ele", trigger["ele"])
-        self.add_selection("trigger_mu", trigger["mu"])
-        self.add_selection("lumi", lumi_mask)
-        self.add_selection("metfilters", metfilters)
-        self.add_selection("one_electron", n_good_electrons == 1)
-        self.add_selection("one_muon", n_good_muons == 1)
-        self.add_selection("ele_reliso", ele_reliso < 0.25)
-        self.add_selection("mu_reliso", mu_reliso < 0.25)
-        self.add_selection("deltaR", mu_bjet_dr > 0.4)
-        self.add_selection("two_bjets", n_good_bjets >= 1)
+        self.selections.add("trigger_ele", trigger["ele"])
+        self.selections.add("trigger_mu", trigger["mu"])
+        self.selections.add("lumi", lumi_mask)
+        self.selections.add("metfilters", metfilters)
+        self.selections.add("one_electron", n_good_electrons == 1)
+        self.selections.add("one_muon", n_good_muons == 1)
+        self.selections.add("ele_reliso", ele_reliso < 0.25)
+        self.selections.add("mu_reliso", mu_reliso < 0.25)
+        self.selections.add("deltaR", mu_bjet_dr > 0.4)
+        self.selections.add("two_bjets", n_good_bjets >= 1)
         
         
         # regions
@@ -448,10 +435,22 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
                 muon_bjet_dr=normalize(mu_bjet_dr, cut),
                 weight=region_weight,
             )
-           
+            
+            # cutflow
+            cutflow_selections = []
+            for selection in regions[self._channel][region]:
+                cutflow_selections.append(selection)
+                cutflow_cut = self.selections.all(*cutflow_selections)
+                if self.isMC:
+                    cutflow_weight = weights.partial_weight(region_weights)
+                    self.output["cutflow"][region][selection] = np.sum(cutflow_weight[cutflow_cut])
+                else:
+                    self.output["cutflow"][region][selection] = np.sum(cutflow_cut)
+        
+        
         for region in regions[self._channel]:
             fill(region)
-                
+        
         return {dataset: self.output}
 
     def postprocess(self, accumulator):

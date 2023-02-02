@@ -143,11 +143,11 @@ class TTbarControlRegionProcessor(processor.ProcessorABC):
         """
         self.selections.add(name, sel)
         selection = self.selections.all(*self.selections.names)
-        """if self.isMC:
+        if self.isMC:
             weight = self.weights.weight()
-            self.output['cut_flow'][name] = float(weight[selection].sum())"""
-        # else:
-        self.output["cut_flow"][name] = np.sum(selection)
+            self.output['cut_flow'][name] = np.sum(weight[selection])
+        else:
+            self.output["cut_flow"][name] = np.sum(selection)
 
     @property
     def accumulator(self):
