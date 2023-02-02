@@ -191,11 +191,6 @@ class TTbarControlRegionProcessor(processor.ProcessorABC):
                 if self._channel == "ele"
                 else events.Electron.mvaFall17V2Iso_WP90
             )
-            & (
-                events.Electron.pfRelIso04_all < 0.25
-                if hasattr(events.Electron, "pfRelIso04_all")
-                else events.Electron.pfRelIso03_all < 0.25
-            )
         )
         n_good_electrons = ak.sum(good_electrons, axis=1)
         electrons = ak.firsts(events.Electron[good_electrons])
@@ -206,11 +201,6 @@ class TTbarControlRegionProcessor(processor.ProcessorABC):
             (events.Muon.pt >= 30)
             & (np.abs(events.Muon.eta) < 2.4)
             & (events.Muon.mediumId if self._channel == "ele" else events.Muon.tightId)
-            & (
-                events.Muon.pfRelIso04_all < 0.25
-                if hasattr(events.Muon, "pfRelIso04_all")
-                else events.Muon.pfRelIso03_all < 0.25
-            )
         )
         n_good_muons = ak.sum(good_muons, axis=1)
         muons = ak.firsts(events.Muon[good_muons])
@@ -219,7 +209,7 @@ class TTbarControlRegionProcessor(processor.ProcessorABC):
         # Tau
         good_taus = (
             (events.Tau.idDeepTau2017v2p1VSjet > 8)
-            & (events.Tau.idDeepTau2017v2p1VSe > 8)
+            & (events.Tau.idDeepTau2017v2p1VSe > 1)
             & (events.Tau.idDeepTau2017v2p1VSmu > 1)
             & (np.abs(events.Tau.eta) < 2.3)
             & (events.Tau.pt > 20)
@@ -360,15 +350,15 @@ class TTbarControlRegionProcessor(processor.ProcessorABC):
         self.selections = PackedSelection()
         self.add_selection("lumi", lumi_mask)
         self.add_selection("metfilters", metfilters)
+        self.add_selection("trigger_ele", trigger["ele"])
+        self.add_selection("trigger_mu", trigger["mu"])
         if self._channel == "ele":
-            self.add_selection("trigger_ele", trigger["ele"])
             self.add_selection("good_electron", n_good_electrons == 1)
             self.add_selection("good_muon", n_good_muons == 0)
         elif self._channel == "mu":
-            self.add_selection("trigger_mu", trigger["mu"])
             self.add_selection("good_electron", n_good_electrons == 0)
             self.add_selection("good_muon", n_good_muons == 1)
-            self.add_selection("deltaR", mu_bjet_dr > 0.4)
+        self.add_selection("deltaR", mu_bjet_dr > 0.4)
         self.add_selection("good_tau", n_good_taus == 0)
         self.add_selection("met_pt", met.pt > 50)
         self.add_selection("two_bjets", n_good_bjets == 2)
