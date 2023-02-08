@@ -200,7 +200,7 @@ class TTbarControlRegionProcessor(processor.ProcessorABC):
         good_muons = (
             (events.Muon.pt >= 30)
             & (np.abs(events.Muon.eta) < 2.4)
-            & (events.Muon.mediumId if self._channel == "ele" else events.Muon.tightId)
+            & (events.Muon.tightId if self._channel == "ele" else events.Muon.tightId)
         )
         n_good_muons = ak.sum(good_muons, axis=1)
         muons = ak.firsts(events.Muon[good_muons])
@@ -209,7 +209,7 @@ class TTbarControlRegionProcessor(processor.ProcessorABC):
         # Tau
         good_taus = (
             (events.Tau.idDeepTau2017v2p1VSjet > 8)
-            & (events.Tau.idDeepTau2017v2p1VSe > 1)
+            & (events.Tau.idDeepTau2017v2p1VSe > 8)
             & (events.Tau.idDeepTau2017v2p1VSmu > 1)
             & (np.abs(events.Tau.eta) < 2.3)
             & (events.Tau.pt > 20)
@@ -329,7 +329,7 @@ class TTbarControlRegionProcessor(processor.ProcessorABC):
                 sf_type="id",
                 year=self._year,
                 mod=self._yearmod,
-                wp="medium" if self._channel == "ele" else "tight",
+                wp="tight" if self._channel == "ele" else "tight",
             )
             add_muon_weight(
                 weights=self.weights,
@@ -337,7 +337,7 @@ class TTbarControlRegionProcessor(processor.ProcessorABC):
                 sf_type="iso",
                 year=self._year,
                 mod=self._yearmod,
-                wp="medium" if self._channel == "ele" else "tight",
+                wp="tight" if self._channel == "ele" else "tight",
             )
             if self._channel == "mu":
                 add_muonTriggerIso_weight(
@@ -350,12 +350,12 @@ class TTbarControlRegionProcessor(processor.ProcessorABC):
         self.selections = PackedSelection()
         self.add_selection("lumi", lumi_mask)
         self.add_selection("metfilters", metfilters)
-        self.add_selection("trigger_ele", trigger["ele"])
-        self.add_selection("trigger_mu", trigger["mu"])
         if self._channel == "ele":
+            self.add_selection("trigger_ele", trigger["ele"])
             self.add_selection("good_electron", n_good_electrons == 1)
             self.add_selection("good_muon", n_good_muons == 0)
         elif self._channel == "mu":
+            self.add_selection("trigger_mu", trigger["mu"])
             self.add_selection("good_electron", n_good_electrons == 0)
             self.add_selection("good_muon", n_good_muons == 1)
         self.add_selection("deltaR", mu_bjet_dr > 0.4)
@@ -369,22 +369,22 @@ class TTbarControlRegionProcessor(processor.ProcessorABC):
                 "lumi",
                 "metfilters",
                 "trigger_ele",
-                "good_electron",
-                "good_muon",
                 "good_tau",
                 "met_pt",
                 "two_bjets",
+                "good_electron",
+                "good_muon",
             ],
             "mu": [
                 "lumi",
                 "metfilters",
                 "trigger_mu",
-                "good_muon",
                 "deltaR",
-                "good_electron",
                 "good_tau",
                 "met_pt",
                 "two_bjets",
+                "good_muon",
+                "good_electron",
             ],
         }
 
