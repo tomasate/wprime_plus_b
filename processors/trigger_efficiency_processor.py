@@ -169,21 +169,44 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
                 if self._channel == "ele"
                 else events.Electron.mvaFall17V2Iso_WP90
             )
+            & (
+                events.Electron.pfRelIso04_all < 0.25
+                if hasattr(events.Electron, "pfRelIso04_all")
+                else events.Electron.pfRelIso03_all < 0.25
+            ) 
         )
         n_good_electrons = ak.sum(good_electrons, axis=1)
-        electrons = ak.firsts(events.Electron[good_electrons])
+        electrons = ak.firsts(events.Electron[
+            np.logical_and(good_electrons, n_good_electrons == 1)
+        ])
         electrons_p4 = build_p4(electrons)
+    
+        ele_reliso = (
+            electrons.pfRelIso04_all
+            if hasattr(electrons, "pfRelIso04_all")
+            else electrons.pfRelIso03_all
+        )
         
         # muons
         good_muons = (
             (events.Muon.pt >= 30)
             & (np.abs(events.Muon.eta) < 2.4)
             & (events.Muon.mediumId if self._channel == "ele" else events.Muon.tightId)
+            & (
+                events.Muon.pfRelIso04_all < 0.25
+                if hasattr(events.Muon, "pfRelIso04_all") 
+                else events.Muon.pfRelIso03_all < 0.25
+                )
         )
         n_good_muons = ak.sum(good_muons, axis=1)
-        muons = ak.firsts(events.Muon[good_muons])
+        muons = ak.firsts(events.Muon[np.logical_and(good_muons, n_good_muons == 1)])
         muons_p4 = build_p4(muons)
         
+        mu_reliso = (
+            muons.pfRelIso04_all
+            if hasattr(muons, "pfRelIso04_all")
+            else muons.pfRelIso03_all
+        )
         # b-jets
         good_bjets = (
             (events.Jet.pt >= 20)
@@ -204,19 +227,6 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
             met_phi=met.phi,
             npvs=events.PV.npvs,
             mod=self._yearmod,
-        )
-        
-        # relative Iso
-        ele_reliso = (
-            electrons.pfRelIso04_all
-            if hasattr(electrons, "pfRelIso04_all")
-            else electrons.pfRelIso03_all
-        )
-        
-        mu_reliso = (
-            muons.pfRelIso04_all
-            if hasattr(muons, "pfRelIso04_all")
-            else muons.pfRelIso03_all
         )
         
         # lepton-bjet delta R
@@ -314,12 +324,10 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
         self.selections.add("trigger_mu", trigger["mu"])
         self.selections.add("lumi", lumi_mask)
         self.selections.add("metfilters", metfilters)
-        self.selections.add("one_electron", n_good_electrons == 1)
-        self.selections.add("one_muon", n_good_muons == 1)
-        self.selections.add("ele_reliso", ele_reliso < 0.25)
-        self.selections.add("mu_reliso", mu_reliso < 0.25)
         self.selections.add("deltaR", mu_bjet_dr > 0.4)
         self.selections.add("two_bjets", n_good_bjets >= 1)
+        self.selections.add("one_electron", n_good_electrons == 1)
+        self.selections.add("one_muon", n_good_muons == 1)
         
         
         # regions
@@ -330,8 +338,6 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
                     "trigger_mu", 
                     "lumi",
                     "metfilters",
-                    "ele_reliso",
-                    "mu_reliso",
                     "two_bjets",
                     "one_muon",
                     "one_electron",
@@ -340,8 +346,6 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
                     "trigger_mu", 
                     "lumi",
                     "metfilters",
-                    "ele_reliso",
-                    "mu_reliso",
                     "two_bjets",
                     "one_muon",
                     "one_electron",
@@ -354,8 +358,6 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
                     "trigger_mu",
                     "lumi",
                     "metfilters",
-                    "ele_reliso",
-                    "mu_reliso",
                     "deltaR",
                     "two_bjets",
                     "one_electron",
@@ -365,8 +367,6 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
                     "trigger_ele",
                     "lumi",
                     "metfilters",
-                    "ele_reliso",
-                    "mu_reliso",
                     "deltaR",
                     "two_bjets",
                     "one_electron",
