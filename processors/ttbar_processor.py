@@ -191,20 +191,44 @@ class TTbarControlRegionProcessor(processor.ProcessorABC):
                 if self._channel == "ele"
                 else events.Electron.mvaFall17V2Iso_WP90
             )
+            & (
+                events.Electron.pfRelIso04_all < 0.25
+                if hasattr(events.Electron, "pfRelIso04_all")
+                else events.Electron.pfRelIso03_all < 0.25
+            )
         )
         n_good_electrons = ak.sum(good_electrons, axis=1)
-        electrons = ak.firsts(events.Electron[good_electrons])
+        electrons = ak.firsts(events.Electron[
+            np.logical_and(good_electrons, n_good_electrons == 1)
+        ])
         electrons_p4 = build_p4(electrons)
+        
+        ele_reliso = (
+            electrons.pfRelIso04_all
+            if hasattr(electrons, "pfRelIso04_all")
+            else electrons.pfRelIso03_all
+        )
 
         # muons
         good_muons = (
             (events.Muon.pt >= 30)
             & (np.abs(events.Muon.eta) < 2.4)
             & (events.Muon.tightId if self._channel == "ele" else events.Muon.tightId)
+            & (
+                events.Muon.pfRelIso04_all < 0.25
+                if hasattr(events.Muon, "pfRelIso04_all")
+                else events.Muon.pfRelIso03_all < 0.25
+            )
         )
         n_good_muons = ak.sum(good_muons, axis=1)
-        muons = ak.firsts(events.Muon[good_muons])
+        muons = ak.firsts(events.Muon[np.logical_and(good_muons, n_good_muons == 1)])
         muons_p4 = build_p4(muons)
+        
+        mu_reliso = (
+            muons.pfRelIso04_all
+            if hasattr(muons, "pfRelIso04_all")
+            else muons.pfRelIso03_all
+        )
 
         # Tau
         good_taus = (
@@ -239,19 +263,6 @@ class TTbarControlRegionProcessor(processor.ProcessorABC):
             met_phi=met.phi,
             npvs=events.PV.npvs,
             mod=self._yearmod,
-        )
-
-        # relative Iso
-        ele_reliso = (
-            electrons.pfRelIso04_all
-            if hasattr(electrons, "pfRelIso04_all")
-            else electrons.pfRelIso03_all
-        )
-
-        mu_reliso = (
-            muons.pfRelIso04_all
-            if hasattr(muons, "pfRelIso04_all")
-            else muons.pfRelIso03_all
         )
 
         # lepton-bjet delta R
@@ -369,22 +380,22 @@ class TTbarControlRegionProcessor(processor.ProcessorABC):
                 "lumi",
                 "metfilters",
                 "trigger_ele",
-                "good_tau",
                 "met_pt",
                 "two_bjets",
-                "good_electron",
+                "good_tau",
                 "good_muon",
+                "good_electron",
             ],
             "mu": [
                 "lumi",
                 "metfilters",
                 "trigger_mu",
                 "deltaR",
-                "good_tau",
                 "met_pt",
                 "two_bjets",
-                "good_muon",
+                "good_tau",
                 "good_electron",
+                "good_muon",
             ],
         }
 
