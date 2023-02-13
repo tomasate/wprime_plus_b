@@ -3,13 +3,16 @@ import sys
 import json
 import pickle
 import argparse
-import dask
+#import dask
 import importlib.resources
 from datetime import datetime
+from coffea.nanoevents import NanoEventsFactory, NanoAODSchema
 from coffea import processor
-from dask.distributed import Client
-from distributed.diagnostics.plugin import UploadDirectory
+#from dask.distributed import Client
+#from distributed.diagnostics.plugin import UploadDirectory
 
+
+loc_base_ = os.environ["PWD"]
 #Este es un comentario para el commit
 def main(args):
     loc_base = os.environ["PWD"]
@@ -18,28 +21,42 @@ def main(args):
     with open(f"{loc_base}/data/simplified_samples.json", "r") as f:
         simplified_samples = json.load(f)[args.year]
         simplified_samples_r = {v: k for k, v in simplified_samples.items()}
+
     with open(f"{loc_base}/data/fileset/fileset_{args.year}_UL_NANO.json", "r") as f:
         data = json.load(f)
+    test_file = data[simplified_samples_r[args.sample]][0]
+    try:
+        redirector = "root://cmsxrootd.fnal.gov/"
+        fname = f"{redirector}{test_file}"
+        events = NanoEventsFactory.from_root(fname, schemaclass=NanoAODSchema, entry_stop=1).events()
+    except OSError:
+        redirector = "root://cxrootd-cms.infn.it/"
+        fname = f"{redirector}{test_file}"
+        events = NanoEventsFactory.from_root(fname, schemaclass=NanoAODSchema, entry_stop=1).events()
+
+       
     for key, val in data.items():
         if simplified_samples_r[args.sample] in key:
             sample = simplified_samples[key]
             fileset = {sample: val}
             if val is not None:
                 if args.nfiles == -1:
-                    fileset[sample] = ["root://xcache/" + file for file in val]
+                    fileset[sample] = [f"{redirector}" + file for file in val]
                 else:
-                    fileset[sample] = [
-                        "root://xcache/" + file for file in val[: args.nfiles]
-                    ]
-    # define processor
+                    fileset[sample] = [f"{redirector}" + file for file in val[: args.nfiles]]
+    
+        # define processor
     if args.processor == "ttbar":
-        from processors.ttbar_processor import TTbarControlRegionProcessor
+        from processors.ttbar_processor import bkgestimationprocessor
+        proc = bkgestimationprocessor
         
-        proc = TTbarControlRegionProcessor
     if args.processor == "trigger":
         from processors.trigger_efficiency_processor import TriggerEfficiencyProcessor
-
         proc = TriggerEfficiencyProcessor
+
+    if args.processor == "signal":
+        from processors.signal_processor import SignalProcessor
+        proc = SignalProcessor
         
     # executors and arguments
     executors = {
@@ -50,9 +67,10 @@ def main(args):
     executor_args = {
         "schema": processor.NanoAODSchema,
     }
-
+    
     if args.executor == "futures":
         executor_args.update({"workers": args.workers})
+        
     if args.executor == "dask":
         client = Client(
             "tls://daniel-2eocampo-2ehenao-40cern-2ech.dask.cmsaf-prod.flatiron.hollandhpc.org:8786"
@@ -60,7 +78,7 @@ def main(args):
         try:
             client.register_worker_plugin(
                 UploadDirectory(
-                    f"{loc_base}/wprime_plus_b", restart=True, update_path=True
+                    f"/afs/cern.ch/user/t/tatehort/wprime_plus_b", restart=True, update_path=True
                 ),
                 nanny=True,
             )
@@ -86,24 +104,10 @@ def main(args):
     # save dictionary with cutflows
     date = datetime.today().strftime("%Y-%m-%d")
     if not os.path.exists(
-        args.output_location
-        + date
-        + "/"
-        + args.processor
-        + "/"
-        + args.year
-        + "/"
-        + args.channel
+        args.output_location + date + "/" + args.processor + "/" + args.year + "/" + args.channel
     ):
         os.makedirs(
-            args.output_location
-            + date
-            + "/"
-            + args.processor
-            + "/"
-            + args.year
-            + "/"
-            + args.channel
+            args.output_location + date + "/" + args.processor + "/" + args.year + "/" + args.channel
         )
     with open(
         args.output_location
@@ -173,7 +177,7 @@ if __name__ == "__main__":
         "--output_location",
         dest="output_location",
         type=str,
-        default="/home/cms-jovyan/wprime_plus_b/outfiles/",
+        default=f"{loc_base_}/output/",
         help="output location",
     )
 

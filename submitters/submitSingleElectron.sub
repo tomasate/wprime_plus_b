@@ -1,0 +1,9 @@
+executable            = /afs/cern.ch/user/t/tatehort/wprime_plus_b/submitters/processSingleElectron.sh
+arguments             = $(ClusterId)$(ProcId)
+output                = output_logs/proc_t.$(ClusterId).$(ProcId).out
+error                 = output_logs/proc_t.$(ClusterId).$(ProcId).err
+log                   = output_logs/proc_t.$(ClusterId).log
+
++SingularityImage = "/cvmfs/unpacked.cern.ch/registry.hub.docker.com/coffeateam/coffea-dask:latest"
+queue 1
+    

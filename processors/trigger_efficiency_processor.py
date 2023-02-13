@@ -1,5 +1,6 @@
 import json
 import pickle
+import os
 import numpy as np
 import pandas as pd
 import awkward as ak
@@ -19,7 +20,7 @@ from .corrections import (
     get_met_corrections
 )
 
-
+loc_base = os.environ["PWD"]
 class TriggerEfficiencyProcessor(processor.ProcessorABC):
     def __init__(
         self,
@@ -36,22 +37,22 @@ class TriggerEfficiencyProcessor(processor.ProcessorABC):
         self._dir_name = dir_name
 
         # open triggers
-        with open("/home/cms-jovyan/wprime_plus_b/data/triggers.json", "r") as f:
+        with open(f"{loc_base}/data/triggers.json", "r") as f:
             self._triggers = json.load(f)[self._year]
 
         # open btagDeepFlavB
-        with open("/home/cms-jovyan/wprime_plus_b/data/btagDeepFlavB.json", "r") as f:
+        with open(f"{loc_base}/data/btagDeepFlavB.json", "r") as f:
             self._btagDeepFlavB = json.load(f)[self._year]
 
         # open met filters
         # https://twiki.cern.ch/twiki/bin/view/CMS/MissingETOptionalFiltersRun2
         with open(
-            "/home/cms-jovyan/wprime_plus_b/data/metfilters.json", "rb"
+            f"{loc_base}/data/metfilters.json", "rb"
         ) as handle:
             self._metfilters = json.load(handle)[self._year]
 
         # open lumi masks
-        with open("/home/cms-jovyan/wprime_plus_b/data/lumi_masks.pkl", "rb") as handle:
+        with open(f"{loc_base}/data/lumi_masks.pkl", "rb") as handle:
             self._lumi_mask = pickle.load(handle)
         
         # output histograms

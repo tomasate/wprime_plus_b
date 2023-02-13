@@ -1,12 +1,13 @@
 import json
 import correctionlib
 import numpy as np
+import os
 import awkward as ak
 from typing import Type
 from coffea import util
 from coffea.analysis_tools import Weights
 
-
+loc_base = os.environ["PWD"]
 # CorrectionLib files are available from
 POG_CORRECTION_PATH = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration"
 
@@ -129,7 +130,7 @@ class BTagCorrector:
 
         # btag working points (only for deepJet)
         # https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation
-        with open("/home/cms-jovyan/wprime_plus_b/data/btagWPs.json", "rb") as handle:
+        with open(f"{loc_base}/data/btagWPs.json", "rb") as handle:
             btagWPs = json.load(handle)
         self._btagwp = btagWPs[tagger][year + mod][wp]
 
@@ -308,10 +309,10 @@ def add_electronTrigger_weight(
     mod: str = "",
 ):
     trigger_corrections = {
-        "2016APV": "/home/cms-jovyan/wprime_plus_b/data/electron_trigger_2016preVFP_UL.json",
-        "2016": "/home/cms-jovyan/wprime_plus_b/data/electron_trigger_2016postVFP_UL.json",
-        "2017": "/home/cms-jovyan/wprime_plus_b/data/electron_trigger_2017_UL.json",
-        "2018": "/home/cms-jovyan/wprime_plus_b/data/electron_trigger_2018_UL.json",
+        "2016APV": f"{loc_base}/data/electron_trigger_2016preVFP_UL.json",
+        "2016": f"{loc_base}/data/electron_trigger_2016postVFP_UL.json",
+        "2017": f"{loc_base}/data/electron_trigger_2017_UL.json",
+        "2018": f"{loc_base}/data/electron_trigger_2018_UL.json",
     }
     # correction set
     cset = correctionlib.CorrectionSet.from_file(trigger_corrections[year + mod])
