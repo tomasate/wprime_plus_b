@@ -1,0 +1,7 @@
+Starting job on  Tue Feb 14 03:11:08 CET 2023
+Running on: Linux b7s06p9018.cern.ch 3.10.0-1160.81.1.el7.x86_64 #1 SMP Fri Dec 16 17:29:43 UTC 2022 x86_64 x86_64 x86_64 GNU/Linux
+System software: 
+  Preprocessing 100% ━━━━━━━━━━━━━━━━━━━━ 1/1 [ 0:00:05 < 0:00:00 | ?   file/s ]
+Merging (local) 100% ━━━━━━━━━━━━━━━━━━━━ 1/1 [ 0:00:05 < 0:00:00 | ? merges/s ]
+     Processing 100% ━━━━━━━━━━━━━━━━━━ 9/9 [ 0:00:51 < 0:00:00 | 0.3  chunk/s ]
+Merging (local) 100% ━━━━━━━━━━━━━━━━━━ 9/9 [ 0:00:51 < 0:00:00 | ?   merges/s ]

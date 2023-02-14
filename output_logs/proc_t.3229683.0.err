@@ -1,0 +1,2 @@
+INFO:    underlay of /etc/cvmfs required more than 50 (75) bind mounts
+cat: /etc/redhat-release: No such file or directory

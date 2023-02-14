@@ -47,8 +47,10 @@ def main(args):
     
         # define processor
     if args.processor == "ttbar":
-        from processors.ttbar_processor import bkgestimationprocessor
-        proc = bkgestimationprocessor
+        from processors.ttbar_processor import TTbarControlRegionProcessor
+        proc = TTbarControlRegionProcessor
+        #from processors.ttbar_processor import bkgestimationprocessor
+        #proc = bkgestimationprocessor
         
     if args.processor == "trigger":
         from processors.trigger_efficiency_processor import TriggerEfficiencyProcessor

@@ -1,0 +1,8 @@
+INFO:    underlay of /etc/cvmfs required more than 50 (75) bind mounts
+cat: /etc/redhat-release: No such file or directory
+Traceback (most recent call last):
+  File "run.py", line 185, in <module>
+    main(args)
+  File "run.py", line 50, in main
+    from processors.ttbar_processor import bkgestimationprocessor
+ImportError: cannot import name 'bkgestimationprocessor' from 'processors.ttbar_processor' (/afs/cern.ch/user/t/tatehort/wprime_plus_b/processors/ttbar_processor.py)
