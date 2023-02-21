@@ -25,14 +25,28 @@ def main(args):
     with open(f"{loc_base}/data/fileset/fileset_{args.year}_UL_NANO.json", "r") as f:
         data = json.load(f)
     test_file = data[simplified_samples_r[args.sample]][0]
+
+
     try:
-        redirector = "root://cmsxrootd.fnal.gov/"
+        #redirector = "root://cmsxrootd.fnal.gov/"
+        redirector = "root://xrootd-cms.infn.it/"
         fname = f"{redirector}{test_file}"
         events = NanoEventsFactory.from_root(fname, schemaclass=NanoAODSchema, entry_stop=1).events()
-    except OSError:
-        redirector = "root://cxrootd-cms.infn.it/"
-        fname = f"{redirector}{test_file}"
-        events = NanoEventsFactory.from_root(fname, schemaclass=NanoAODSchema, entry_stop=1).events()
+    except Exception as e:
+        del redirector
+        del fname
+        try:
+            #redirector = "root://xrootd-cms.infn.it/"
+            redirector = "root://cmsxrootd.fnal.gov/"
+            fname = f"{redirector}{test_file}"
+            events = NanoEventsFactory.from_root(fname, schemaclass=NanoAODSchema, entry_stop=1).events()
+        except Exception as ee:
+            del redirector
+            del fname
+            redirector = "root://cms-xrd-global.cern.ch/"
+            fname = f"{redirector}{test_file}"
+            events = NanoEventsFactory.from_root(fname, schemaclass=NanoAODSchema, entry_stop=1).events()
+
 
        
     for key, val in data.items():
