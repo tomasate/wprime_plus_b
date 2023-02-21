@@ -8,6 +8,10 @@
 
 Python package for analyzing W' + b in the electron and muon channels. The analysis uses a columnar framework to process input tree-based [NanoAOD](https://twiki.cern.ch/twiki/bin/view/CMSPublic/WorkBookNanoAOD) files using the [coffea](https://coffeateam.github.io/coffea/) and [scikit-hep](https://scikit-hep.org) Python libraries.
 
+## Submit
+
+A new script has beed added. This script [submit.py](submit.py) generates the different `.sh` and `.sub` files for each sample in a specific year (so far implemented for 2017) and submit the jobs to condor. Also, one can submit a job from terminal, with `condor_submit path/submitters/submit<Sample>.sub`. This submit runs the `run.py` script for the muon channel with the ttbar processor for the sample `<Sample>` for 1 file. 
+
 ## Processors
 
 - [TriggerEfficiencyProcessor](processors/trigger_efficiency_processor.py) (trigger): Trigger efficiency processor that applies pre-selection and selection cuts (two bjets + one lepton + MET), and saves numerator and denominator as hist objects in a pickle file. 
