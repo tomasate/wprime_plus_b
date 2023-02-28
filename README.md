@@ -8,6 +8,25 @@
 
 Python package for analyzing W' + b in the electron and muon channels. The analysis uses a columnar framework to process input tree-based [NanoAOD](https://twiki.cern.ch/twiki/bin/view/CMSPublic/WorkBookNanoAOD) files using the [coffea](https://coffeateam.github.io/coffea/) and [scikit-hep](https://scikit-hep.org) Python libraries.
 
+
+## Submitting condor jobs
+
+- Before submitting jobs, make sure you have a valid proxy:
+```
+voms-proxy-init --voms cms --valid 100:00
+```
+
+We use the [submit.py](submit.py) script to submit all jobs to condor (each job with an specific sample) for the muon channel, the year 2017, and the ttbar processor. If you want to change those parameters, you can change them in the [submit.py](submit.py) in the lines 9, 10 and 11.
+
+This [submit.py](submit.py) not only submit the jobs to condor, but also create the ``.sh`` files and the ``.sub`` files needed for the job submission.
+
+If you want to send only one job for an specific process, you should edit the ``.sh`` file  asociated with that process in the [submitters](submitters/) folder, where you only need to change the parameters like the year, processor or channel in the 10th line of the ``.sh 
+
+
+
+
+
+
 ## Submit
 
 A new script has beed added. This script [submit.py](submit.py) generates the different `.sh` and `.sub` files for each sample in a specific year (so far implemented for 2017) and submit the jobs to condor. Also, one can submit a job from terminal, with `condor_submit path/submitters/submit<Sample>.sub`. This submit runs the `run.py` script for the muon channel with the ttbar processor for the sample `<Sample>` for 1 file. 
