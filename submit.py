@@ -6,6 +6,10 @@ from datetime import datetime
 from math import ceil
 import logging
 
+processor = "ttbar"
+year = "2017"
+channel = "mu"
+
 date = datetime.today().strftime("%Y-%m-%d")
 loc_base = os.environ["PWD"]
 logging.basicConfig(filename=f"{loc_base}/log.txt", level=logging.DEBUG)
@@ -27,9 +31,7 @@ except Exception as e:
 with open(f'{loc_base}/data/simplified_samples.json', 'r') as f:
   data = json.load(f)
 
-processor = "ttbar"
-year = "2017"
-channel = "mu"
+
 samples = list(data[year].values())
 for value in samples:
 
