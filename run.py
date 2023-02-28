@@ -1,6 +1,7 @@
 import os
 import sys
 import json
+import logging
 import pickle
 import argparse
 #import dask
@@ -24,35 +25,16 @@ def main(args):
 
     with open(f"{loc_base}/data/fileset/fileset_{args.year}_UL_NANO.json", "r") as f:
         data = json.load(f)
-    test_file = data[simplified_samples_r[args.sample]][0]
+    #test_file = data[simplified_samples_r[args.sample]][0]
 
-
-    try:
-        #redirector = "root://cmsxrootd.fnal.gov/"
-        redirector = "root://xrootd-cms.infn.it/"
-        fname = f"{redirector}{test_file}"
-        events = NanoEventsFactory.from_root(fname, schemaclass=NanoAODSchema, entry_stop=1).events()
-    except Exception as e:
-        del redirector
-        del fname
-        try:
-            #redirector = "root://xrootd-cms.infn.it/"
-            redirector = "root://cmsxrootd.fnal.gov/"
-            fname = f"{redirector}{test_file}"
-            events = NanoEventsFactory.from_root(fname, schemaclass=NanoAODSchema, entry_stop=1).events()
-        except Exception as ee:
-            del redirector
-            del fname
-            redirector = "root://cms-xrd-global.cern.ch/"
-            fname = f"{redirector}{test_file}"
-            events = NanoEventsFactory.from_root(fname, schemaclass=NanoAODSchema, entry_stop=1).events()
-
-
-       
+    
+    redirector = "root://cmsxrootd.fnal.gov/"
+    #redirector = "root://xrootd-redirector.t2.ucsd.edu:1094/"
     for key, val in data.items():
         if simplified_samples_r[args.sample] in key:
             sample = simplified_samples[key]
             fileset = {sample: val}
+            
             if val is not None:
                 if args.nfiles == -1:
                     fileset[sample] = [f"{redirector}" + file for file in val]
@@ -135,7 +117,7 @@ def main(args):
         + "/"
         + args.channel
         + "/"
-        + f"{args.sample}_out.pkl",
+        + f"{args.sample}.pkl",
         "wb",
     ) as handle:
         pickle.dump(out, handle, protocol=pickle.HIGHEST_PROTOCOL)

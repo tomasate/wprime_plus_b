@@ -2,10 +2,11 @@ import os
 import json
 import argparse
 import os
+from datetime import datetime
 from math import ceil
 import logging
 
-
+date = datetime.today().strftime("%Y-%m-%d")
 loc_base = os.environ["PWD"]
 logging.basicConfig(filename=f"{loc_base}/log.txt", level=logging.DEBUG)
 
@@ -26,14 +27,18 @@ except Exception as e:
 with open(f'{loc_base}/data/simplified_samples.json', 'r') as f:
   data = json.load(f)
 
-samples = list(data["2017"].values())
+processor = "ttbar"
+year = "2017"
+channel = "mu"
+samples = list(data[year].values())
 for value in samples:
+
 
     submit= f"""executable            = {loc_base}/submitters/process{value}.sh
 arguments             = $(ClusterId)$(ProcId)
-output                = output_logs/proc_t.$(ClusterId).$(ProcId).out
-error                 = output_logs/proc_t.$(ClusterId).$(ProcId).err
-log                   = output_logs/proc_t.$(ClusterId).log
+output                = /afs/cern.ch/user/t/tatehort/wprime_plus_b_logs/proc_{value.replace('-', '_')}.$(ClusterId).$(ProcId).out
+error                 = /afs/cern.ch/user/t/tatehort/wprime_plus_b_logs/proc_{value.replace('-', '_')}.$(ClusterId).$(ProcId).err
+log                   = /afs/cern.ch/user/t/tatehort/wprime_plus_b_logs/proc_{value.replace('-', '_')}.$(ClusterId).log
 
 +SingularityImage = "/cvmfs/unpacked.cern.ch/registry.hub.docker.com/coffeateam/coffea-dask:latest"
 queue 1
@@ -50,7 +55,12 @@ echo "System software: `cat /etc/redhat-release`"
 export X509_USER_PROXY=$HOME/tmp/x509up
 cd {loc_base}/
 
-python3 run.py --processor ttbar --executor futures --workers 4 --sample {value} --channel mu --nfiles 1 --year 2017"""
+python3 run.py --processor {processor} --executor futures --workers 4 --sample {value} --channel {channel} --nfiles -1 --year {year}
+
+#move output to eos
+#xrdcp -r -f output/ /eos/home-t/tatehort/
+#rm {loc_base}/output/{date}/{processor}/{year}/{channel}/{value}.pkl"""
+
 
     with open(f"{loc_base}/submitters/process{value}.sh", "w") as submit_writen:
         submit_writen.write(arch_sh)
@@ -58,7 +68,7 @@ python3 run.py --processor ttbar --executor futures --workers 4 --sample {value}
 paths = os.popen(f'find {loc_base}/submitters/ -name "*.sub"').read().split()
 
 
-for path in paths:
-    #os.system(f"condor_submit {path}")
-    print(path)
+#for path in paths:
+#    os.system(f"condor_submit {path}")
+    #print(path)
 
