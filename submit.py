@@ -70,7 +70,7 @@ python3 run.py --processor {processor} --executor futures --workers 4 --sample {
 paths = os.popen(f'find {loc_base}/submitters/ -name "*.sub"').read().split()
 
 
-#for path in paths:
-#    os.system(f"condor_submit {path}")
+for path in paths:
+    os.system(f"condor_submit {path}")
     #print(path)
 
