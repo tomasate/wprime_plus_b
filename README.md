@@ -20,7 +20,7 @@ We use the [submit.py](submit.py) script to submit all jobs to condor (each job 
 
 This [submit.py](submit.py) not only submit the jobs to condor, but also create the ``.sh`` files and the ``.sub`` files needed for the job submission.
 
-If you want to send only one job for an specific process, you should edit the ``.sh`` file  asociated with that process in the [submitters](submitters/) folder, where you only need to change the parameters like the year, processor or channel in the 10th line of the ``.sh 
+If you want to send only one job for an specific process, you should edit the ``.sh`` file  asociated with that process in the [submitters](submitters/) folder, where you only need to change the parameters like the year, processor or channel in the 10th line of the ``.sh``
 
 
 
