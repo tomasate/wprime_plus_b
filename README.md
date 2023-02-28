@@ -20,16 +20,24 @@ We use the [submit.py](submit.py) script to submit all jobs to condor (each job 
 
 This [submit.py](submit.py) not only submit the jobs to condor, but also create the ``.sh`` files and the ``.sub`` files needed for the job submission.
 
-If you want to send only one job for an specific process, you should edit the ``.sh`` file  asociated with that process in the [submitters](submitters/) folder, where you only need to change the parameters like the year, processor or channel in the 10th line of the ``.sh``
+```
+python3 submit.py
+```
+
+If you want to send only one job for an specific process, you should edit the ``.sh`` file  asociated with that process in the [submitters](submitters/) folder, where you only need to change the parameters like the year, processor or channel in the 10th line of the ``.sh`` and then submit the job to condor:
+
+```
+condor_submit submit<NameOfTheSimplifiedSample>.sub
+```
+
+You also can watch in real time the status of the jobs with 
+
+```
+watch condor_q
+```
 
 
 
-
-
-
-## Submit
-
-A new script has beed added. This script [submit.py](submit.py) generates the different `.sh` and `.sub` files for each sample in a specific year (so far implemented for 2017) and submit the jobs to condor. Also, one can submit a job from terminal, with `condor_submit path/submitters/submit<Sample>.sub`. This submit runs the `run.py` script for the muon channel with the ttbar processor for the sample `<Sample>` for 1 file. 
 
 ## Processors
 
