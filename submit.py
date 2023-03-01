@@ -20,7 +20,7 @@ except Exception as e:
     pass
 
 try:
-    os.mkdir(f"{loc_base}/output_logs")
+    os.mkdir(f"{loc_base.replace('/wprime_plus_b', '')}/wprime_plus_b_logs")
 except Exception as e:
     pass
 try:
@@ -38,9 +38,9 @@ for value in samples:
 
     submit= f"""executable            = {loc_base}/submitters/process{value}.sh
 arguments             = $(ClusterId)$(ProcId)
-output                = /afs/cern.ch/user/t/tatehort/wprime_plus_b_logs/proc_{value.replace('-', '_')}.$(ClusterId).$(ProcId).out
-error                 = /afs/cern.ch/user/t/tatehort/wprime_plus_b_logs/proc_{value.replace('-', '_')}.$(ClusterId).$(ProcId).err
-log                   = /afs/cern.ch/user/t/tatehort/wprime_plus_b_logs/proc_{value.replace('-', '_')}.$(ClusterId).log
+output                = {loc_base.replace('/wprime_plus_b', '')}/wprime_plus_b_logs/proc_{value.replace('-', '_')}.$(ClusterId).$(ProcId).out
+error                 = {loc_base.replace('/wprime_plus_b', '')}/wprime_plus_b_logs/proc_{value.replace('-', '_')}.$(ClusterId).$(ProcId).err
+log                   = {loc_base.replace('/wprime_plus_b', '')}/wprime_plus_b_logs/proc_{value.replace('-', '_')}.$(ClusterId).log
 
 +SingularityImage = "/cvmfs/unpacked.cern.ch/registry.hub.docker.com/coffeateam/coffea-dask:latest"
 queue 1
@@ -70,7 +70,7 @@ python3 run.py --processor {processor} --executor futures --workers 4 --sample {
 paths = os.popen(f'find {loc_base}/submitters/ -name "*.sub"').read().split()
 
 
-for path in paths:
-    os.system(f"condor_submit {path}")
+#for path in paths:
+#    os.system(f"condor_submit {path}")
     #print(path)
 
