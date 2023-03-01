@@ -18,7 +18,7 @@ voms-proxy-init --voms cms --valid 100:00
 
 We use the [submit.py](submit.py) script to submit all jobs to condor (each job with an specific sample) for the muon channel, the year 2017, and the ttbar processor. If you want to change those parameters, you can change them in the [submit.py](submit.py) in the lines 9, 10 and 11.
 
-This [submit.py](submit.py) not only submit the jobs to condor, but also create the ``.sh`` files and the ``.sub`` files needed for the job submission.
+This [submit.py](submit.py) not only submit the jobs to condor, but also create the ``.sh`` files and the ``.sub`` files needed for the job submission. To run it just do in the terminal inside the `wprime_plus_b` folder:
 
 ```
 python3 submit.py
