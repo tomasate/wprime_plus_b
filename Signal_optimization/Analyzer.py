@@ -1265,7 +1265,23 @@ def get_max(significance_dictionary):
 
 def optimization(signal_data, backgrounds_data, weights, variable, variable_range, signal_name):
     """
-    
+    Calculate the significance as a function of a variable over a specified range.
+
+    Parameters:
+    - signal_data (pd.DataFrame): DataFrame containing signal data.
+    - backgrounds_data (dict of pd.DataFrame): Dictionary of DataFrames containing background data.
+    - weights (dict): Dictionary of weights corresponding to signal and background.
+    - variable (str): The variable for which the significance is calculated.
+    - variable_range (tuple): A tuple (start, end, num_points) defining the range of the variable.
+    - signal_name (str): The name of the signal dataset in signal_data.
+
+    Returns:
+    - significance (dict): A dictionary where keys are values of the variable within the specified range,
+                          and values are the corresponding significance values.
+
+    Note:
+    - The significance is calculated using the formula: sig = events_signal / (events_signal + events_background) ** 0.5
+    - Events are weighted by the provided weights.
     """
     rango = np.linspace(variable_range[0], variable_range[1], variable_range[2])
     events_signal = np.array([signal_data[signal_data[variable] > i].shape[0] for i in rango]) * weights[signal_name]
@@ -1279,3 +1295,339 @@ def optimization(signal_data, backgrounds_data, weights, variable, variable_rang
     sig = sig / np.max(sig)
     significance = {rango[i]: sig[i] for i in range(len(sig))}
     return significance
+
+
+
+def optimization2(signal_data, backgrounds_data, weights, variable, variable_range, signal_name, b = 5, a = 2):
+    """
+    Calculate the smallest ratio Smin(B)/ε a function of a variable over a specified range according to https://twiki.cern.ch/twiki/bin/viewauth/CMS/PunziFom.
+
+    Parameters:
+    - signal_data (pd.DataFrame): DataFrame containing signal data.
+    - backgrounds_data (dict of pd.DataFrame): Dictionary of DataFrames containing background data.
+    - weights (dict): Dictionary of weights corresponding to signal and background.
+    - variable (str): The variable for which the significance is calculated.
+    - variable_range (tuple): A tuple (start, end, num_points) defining the range of the variable.
+    - signal_name (str): The name of the signal dataset in signal_data.
+
+    Returns:
+    - significance (dict): A dictionary where keys are values of the variable within the specified range,
+                          and values are the corresponding significance values.
+
+    Note:
+    - The Smin(B) is calculated using the formula: Smin(B) = b ** 2 / 2 + a * sqrt(B) + b * sqrt(b**2 + 4* a * sqrt(B) + 4 * B) / 2 
+    - ε = signal_data_cutted.shape[0]/signal_data.shape[0]
+    - Events are weighted by the provided weights.
+    """
+    events_signal_bare = signal_data.shape[0]
+    rango = np.linspace(variable_range[0], variable_range[1], variable_range[2])
+    events_signal = np.array([signal_data[signal_data[variable] > i].shape[0] for i in rango]) * weights[signal_name]
+    events_background = sum(np.array([backgrounds_data[background].query(f"{variable} > {i}").shape[0] \
+                                      for i in rango]) * weights[background] for background in backgrounds_data)
+        
+    
+    
+    sig = b **2 / 2 + a * events_background ** 0.5 + b * (( b ** 2 + 4 * a * events_background ) ** 0.5 )/2
+    sr = sig /(events_signal / events_signal_bare)
+    sr = sr / np.max(sr)
+    significance = {rango[i]: sr[i] for i in range(len(sr))}
+    return significance
+
+
+def generate_histogram_variable(variable, 
+                                factors = [1, 1],
+                                signal_600 = signal_600GeV,
+                                signal_1000 = signal_1TeV,
+                                bkg_dict = backgrounds,
+                                cut = False,
+                                ratio = False):
+    """
+    This function generates a histogram plot for a given variable based on input data and parameters. 
+    It calculates histograms for different backgrounds and signal samples, and combines them into a 
+    stacked histogram plot. The function utilizes the hep.histplot function for plotting.
+
+    Parameters:
+        - variable (str): The variable for which the histogram is generated. Currently supported 
+                          values are 'electron_pt', 'dphi_e_met', and 'met'.
+        - factors (list, optional): Scaling factors for the signal samples. Default is [30, 30].
+        - signal_600 (array-like, optional): Data for the signal sample at 600 GeV. Default is 
+                          signal_600GeV.
+        - signal_1000 (array-like, optional): Data for the signal sample at 1 TeV. Default is 
+                          signal_1TeV.
+        - bkg_dict (dict, optional): Dictionary containing background data. Default is backgrounds.
+        - cut (bool, optional): Indicates whether cuts are applied to the data. Default is False.
+
+    Example:
+        generate_histogram_variable(variable = 'electron_pt', 
+                                    factors = [10, 10],
+                                    signal_600 = signal_600GeV_cut,
+                                    signal_1000 = signal_1TeV_cut,
+                                    bkg_dict = backgrounds_cut,
+                                    cut = True)
+    Returns:
+        A matplotlib figure with the histograms for backgrounds stacked and 2 types of signals
+    """
+
+
+    # generates the bins and the counts for the histograms
+    #if variable == 'electron_pt':
+    if 'pt' in variable:
+        binning = [30, 60, 90, 120, 150, 180, 210, 240, 300, 500]
+        histograma = {'DY + Jets': np.array([0, 0, 0, 0, 0, 0, 0, 0, 0]),
+                      'SingleTop': np.array([0, 0, 0, 0, 0, 0, 0, 0, 0]), 
+                      '$t\\bar{t}$': np.array([0, 0, 0, 0, 0, 0, 0, 0, 0]), 
+                      'W + Jets': np.array([0, 0, 0, 0, 0, 0, 0, 0, 0]),
+                      'VV': np.array([0, 0, 0, 0, 0, 0, 0, 0, 0]),
+                      'Higgs': np.array([0, 0, 0, 0, 0, 0, 0, 0, 0])
+                     }
+    #elif variable == 'dphi_lepton_met':
+    elif 'dphi' in variable:
+        binning = np.linspace(0, 3.15, 30)
+        histograma = {'DY + Jets': np.zeros(29),
+                      'SingleTop': np.zeros(29), 
+                      '$t\\bar{t}$': np.zeros(29), 
+                      'W + Jets': np.zeros(29),
+                      'VV': np.zeros(29),
+                      'Higgs': np.zeros(29)
+                     }
+    elif variable == 'met':
+        binning = [50, 75, 100, 125, 150, 175, 200, 300, 500]
+        histograma = {'DY + Jets': np.zeros(8),
+                      'SingleTop': np.zeros(8), 
+                      '$t\\bar{t}$': np.zeros(8), 
+                      'W + Jets': np.zeros(8),
+                      'VV': np.zeros(8),
+                      'Higgs': np.zeros(8)
+                     }
+    elif 'mass' in variable:
+        binning = np.concatenate([np.arange(100, 701, 50), np.array([800, 1000])] )
+        histograma = {'DY + Jets': np.zeros(14),
+                      'SingleTop': np.zeros(14), 
+                      '$t\\bar{t}$': np.zeros(14), 
+                      'W + Jets': np.zeros(14),
+                      'VV': np.zeros(14),
+                      'Higgs': np.zeros(14)
+                     }
+    
+            
+    
+    #Fill the values for the counts in the histogram
+    for background in bkg_dict.keys():
+        hist, bins = np.histogram(bkg_dict[background][variable], binning)
+        type_bkg = backgrounds_info.loc[background, 'type']
+        histograma[type_bkg] = histograma[type_bkg] + hist * backgrounds_info.loc[background,'weights']
+        
+    
+    if signal_tag == 'ele':
+        signal_1TeV_counts = np.histogram(signal_1000[variable], binning)[0] * events.loc['SignalElectron_1TeV', 'weights']
+        signal_600GeV_counts = np.histogram(signal_600[variable], binning)[0] * events.loc['SignalElectron_600GeV', 'weights']
+        labels = [r"$W'(m = 1TeV) \rightarrow e \nu$",
+                  r"$W'(m = 0.6TeV) \rightarrow e \nu$" ]
+        if factors[0] != 1:
+            labels[0] = fr"$W'(m = 1TeV) \rightarrow e \nu \times { factors[0] }$"
+        if factors[1] != 1:
+            labels[1] = fr"$W'(m = 0.6TeV) \rightarrow e \nu \times { factors[1] }$"
+            
+    elif signal_tag == 'tau':
+        signal_1TeV_counts = np.histogram(signal_1000[variable], binning)[0] * events.loc['Signal_tau_1tev', 'weights']
+        signal_600GeV_counts = np.histogram(signal_600[variable], binning)[0] * events.loc['Signal_tau_600gev', 'weights']    
+        labels = [r"$W'(m = 1TeV) \rightarrow \tau \rightarrow e \nu$",
+                  r"$W'(m = 0.6TeV) \rightarrow \tau \rightarrow e \nu$" ]
+        if factors[0] != 1:
+            labels[0] = fr"$W'(m = 1TeV) \rightarrow \tau \rightarrow l \nu \times{ factors[0]}$"
+        if factors[1] != 1:
+            labels[1] = fr"$W'(m = 0.6TeV) \rightarrow \tau \rightarrow l \nu \times{ factors[1]}$"
+
+    elif signal_tag == 'mu':
+        signal_1TeV_counts = np.histogram(signal_1000[variable], binning)[0] * events.loc['SignalMuon_1TeV', 'weights']
+        signal_600GeV_counts = np.histogram(signal_600[variable], binning)[0] * events.loc['SignalMuon_600GeV', 'weights']
+        labels = [r"$W'(m = 1TeV) \rightarrow \mu \nu$",
+                  r"$W'(m = 0.6TeV) \rightarrow \mu \nu$" ]
+        if factors[0] != 1:
+            labels[0] = fr"$W'(m = 1TeV) \rightarrow \mu \nu \times { factors[0] }$"
+        if factors[1] != 1:
+            labels[1] = fr"$W'(m = 0.6TeV) \rightarrow \mu \nu \times { factors[1] }$"
+
+    if 'dphi' in variable:
+        localization = 'upper center'
+    else:
+        localization = 'best'
+
+
+    #If there is a ratio plot generates the 2 axes and uses the optimization function
+    if ratio == False:
+        f, axs = plt.subplots( figsize=(9, 7), tight_layout = True)
+    else:
+        fig, (axs, rax) = plt.subplots(nrows=2,
+                                       ncols=1,
+                                       figsize=(9, 10),
+                                       tight_layout=True,
+                                       gridspec_kw={"height_ratios": (5, 1)},
+                                       sharex=True
+        )
+        if 'dphi' not in variable:
+            sig_1TeV = an.optimization(signal_data = signal_1000,
+                                       backgrounds_data = bkg_dict,
+                                       weights = w,
+                                       variable = variable,
+                                       variable_range = [binning[0], binning[-1], 50],
+                                       signal_name = signal_name_1TeV)
+            sig_600GeV = an.optimization(signal_data = signal_600,
+                                         backgrounds_data = bkg_dict,
+                                         weights = w,
+                                         variable = variable,
+                                         variable_range = [binning[0], binning[-1], 50],
+                                         signal_name = signal_name_600GeV)
+
+            small_ratio_600GeV =  an.optimization2(signal_data = signal_600,
+                                                   backgrounds_data = bkg_dict,
+                                                   weights = w,
+                                                   variable = variable,
+                                                   variable_range = [binning[0], binning[-1], 50],
+                                                   signal_name = signal_name_600GeV)
+
+            small_ratio_1TeV = an.optimization2(signal_data = signal_1000,
+                                                backgrounds_data = bkg_dict,
+                                                weights = w,
+                                                variable = variable,
+                                                variable_range = [binning[0], binning[-1], 50],
+                                                signal_name = signal_name_1TeV)
+            
+        else:
+            sig_1TeV = an.optimization(signal_data = signal_1000,
+                                       backgrounds_data = bkg_dict,
+                                       weights = w,
+                                       variable = variable,
+                                       variable_range = [0, 3.1, 50],
+                                       signal_name = signal_name_1TeV)
+            sig_600GeV = an.optimization(signal_data = signal_600,
+                                         backgrounds_data = bkg_dict,
+                                         weights = w,
+                                         variable = variable,
+                                         variable_range = [0, 3.1, 50],
+                                         signal_name = signal_name_600GeV)
+            
+            small_ratio_600GeV =  an.optimization2(signal_data = signal_600,
+                                                   backgrounds_data = bkg_dict,
+                                                   weights = w,
+                                                   variable = variable,
+                                                   variable_range = [0, 3.1, 50],
+                                                   signal_name = signal_name_600GeV)
+            small_ratio_1TeV = an.optimization2(signal_data = signal_1000,
+                                                backgrounds_data = bkg_dict,
+                                                weights = w,
+                                                variable = variable,
+                                                variable_range = [0, 3.1, 50],
+                                                signal_name = signal_name_1TeV)
+        
+        rax.plot(sig_1TeV.keys(), sig_1TeV.values(), label = labels[1], color = 'fuchsia')
+        rax.plot(sig_600GeV.keys(), sig_600GeV.values(), label = labels[0], color = 'blue')
+        rax.plot(small_ratio_1TeV.keys(), small_ratio_1TeV.values(), label = labels[1] + "smallest_ratio", color = 'fuchsia', linestyle = 'dashed')
+        rax.plot(small_ratio_600GeV.keys(), small_ratio_600GeV.values(), label = labels[0] + "smallest_ratio", color = 'blue', linestyle = 'dashed')
+        
+        rax.set_ylabel('$S/S_{max}$')
+
+        
+    hep.histplot([histograma[type] for type in histograma.keys()],
+                  bins = binning, 
+                  ax = axs,
+                  #color = ['c', 'm', 'y'],  
+                  stack = True, 
+                  histtype = 'fill', 
+                  label = [type for type in histograma.keys()],
+                  #sort='label_l')
+                  sort='yield',
+                  linewidth = 0.5,
+                  edgecolor = 'k')
+    
+
+    #\tau \rightarrow
+    hep.histplot(signal_600GeV_counts * factors[1],
+                 color = 'blue',
+                 bins = binning,
+                 ax = axs,
+                 label = labels[1])
+    hep.histplot(signal_1TeV_counts * factors[0],
+                 bins = binning,
+                 color = 'fuchsia',
+                 ax = axs,
+                 label = labels[0])
+    
+    if ratio == False:
+        if cut == False:
+            if 'pt' in variable:
+                axs.set_xlabel('$p_T(l)$ [GeV]')
+                axs.set_xlim(20, 510)
+                axs.set_ylim(0, 6.2e5)
+            elif 'dphi' in variable:
+                axs.set_xlabel('$|\Delta\phi(e, p_T^{miss})|$')
+                axs.set_xlim(-0.1, 3.2)
+                axs.set_ylim(0, 1.4e5)
+            elif variable == 'met':
+                axs.set_xlabel('$p_T^{miss}$ [GeV]')
+                axs.set_xlim(20, 510)
+                axs.set_ylim(0, 5.e5)
+            elif variable == "transverse_mass":
+                axs.set_xlabel('$m_T(e, p_T^{miss}) [GeV]$')
+            elif variable == "invariant_mass":
+                axs.set_xlabel('$m(l, b) [GeV]$')
+            elif variable == "total_mass":
+                axs.set_xlabel('$m_{Tot}(l, b, p_T^{miss})$ [GeV]')
+                
+        elif cut == True:
+            if 'pt' in variable:
+                axs.set_xlabel('$p_T(e)$ [GeV]')
+                axs.set_xlim(30, 510)
+                axs.set_ylim(0, 0.9e5)
+            elif 'dphi' in variable:
+                axs.set_xlabel('$|\Delta\phi(e, p_T^{miss})|$')
+                axs.set_xlim(1.9, 3.2)
+                axs.set_ylim(0, 15.5e3)
+            elif variable == 'met':
+                axs.set_xlabel('$p_T^{miss}$ [GeV]')
+                axs.set_xlim(140, 510)
+                axs.set_ylim(0.3, 3e9)
+                axs.set_yscale('log')
+            elif variable == "transverse_mass":
+                axs.set_xlabel('$m_T(l, p_T^{miss})$ [GeV]')
+            elif variable == "invariant_mass":
+                axs.set_xlabel('$m(l, b)$ [GeV]')
+            elif variable == "total_mass":
+                axs.set_xlabel('$m_{Tot}(l, b, p_T^{miss})$ [GeV]')
+
+    else:
+        if cut == False:
+            if 'pt' in variable:
+                rax.set_xlabel('$p_T(l)$ [GeV]')
+                axs.set_xlim(20, 510)
+                axs.set_ylim(0, 8.2e5)
+            elif 'dphi' in valiable:
+                rax.set_xlabel('$|\Delta\phi(l, p_T^{miss})|$')
+                axs.set_xlim(-0.1, 3.2)
+                axs.set_ylim(0, 1.4e5)
+            elif variable == 'met':
+                rax.set_xlabel('$p_T^{miss}$ [GeV]')
+                axs.set_xlim(20, 510)
+                axs.set_ylim(0, 5.e5)
+                
+        elif cut == True:
+            if 'pt' in variable:
+                rax.set_xlabel('$p_T(l)$ [GeV]')
+                axs.set_xlim(20, 510)
+                #axs.set_ylim(0, 7e5)
+            elif 'dphi' in variable:
+                rax.set_xlabel('$|\Delta\phi(l, p_T^{miss})|$')
+                axs.set_xlim(1.9, 3.2)
+                #axs.set_ylim(0, 15.5e3)
+            elif variable == 'met':
+                rax.set_xlabel('$p_T^{miss}$ [GeV]')
+                axs.set_xlim(140, 510)
+                axs.set_ylim(0.3, 3e9)
+                axs.set_yscale('log')
+        
+        
+    
+    axs.set_ylabel('Events')
+    
+    hep.cms.label(ax = axs, loc = 0, label = 'Preliminary', data = True, fontsize = 19, lumi = 41.5, year = 2017)
+    axs.legend(loc = localization, fontsize = 16);
