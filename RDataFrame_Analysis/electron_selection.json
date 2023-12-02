@@ -1,0 +1,65 @@
+{
+   "preselection":{
+      "jet":{
+         "jet_eta":"abs(Jet_eta) < 2.4",
+         "jet_id":"Jet_jetId == 6",
+         "jet_pt":"Jet_pt > 20",
+         "jet_puid":"Jet_puId == 7"
+      },
+      "lepton":{
+         "lepton_dz":{
+            "ele":"Electron_dz < 0.3",
+            "mu":"",
+            "tau":"Tau_dz < 0.2"
+         },
+         "lepton_eta":{
+            "ele":"abs(Electron_eta) < 2.5 && abs(Electron_eta) < 1.44 || abs(Electron_eta) > 1.57",
+            "mu":"abs(Muon_eta) < 2.4",
+            "tau":"abs(Tau_eta) < 2.3"
+         },
+         "lepton_id":{
+            "ele":"",
+            "mu":"Muon_tightId",
+            "tau":""
+         },
+         "lepton_idDeepTau2017v2p1VSe":{
+            "ele":"",
+            "mu":"",
+            "tau":"Tau_idDeepTau2017v2p1VSe > 8"
+         },
+         "lepton_idDeepTau2017v2p1VSjet":{
+            "ele":"",
+            "mu":"",
+            "tau":"Tau_idDeepTau2017v2p1VSjet > 8"
+         },
+         "lepton_idDeepTau2017v2p1VSmu":{
+            "ele":"",
+            "mu":"",
+            "tau":"Tau_idDeepTau2017v2p1VSmu > 1"
+         },
+         "lepton_iso":{
+            "ele":"Electron_pfRelIso03_all < 0.25",
+            "mu":"Muon_pfRelIso03_all < 0.25",
+            "tau":""
+         },
+         "lepton_iso_wp":{
+            "ele":"Electron_mvaFall17V2Iso_WP80",
+            "mu":"",
+            "tau":""
+         },
+         "lepton_pt":{
+            "ele":"Electron_pt > 30",
+            "mu":"Muon_pt > 35",
+            "tau":"Tau_pt > 20"
+         }
+      }
+   },
+   "selection":{
+      "1":"MET_pt > 50",
+      "2":"Sum(good_bjet) == 2",
+      "3":"Sum(good_muon) == 0",
+      "4":"Sum(good_tau) == 0",
+      "5":"Sum(good_electron) == 1"
+   }
+}
+
